@@ -61,7 +61,7 @@ Champs d'une scène (tous optionnels sauf au moins un texte) :
 |---|---|
 | `title` | gros texte en gras |
 | `text` | texte secondaire |
-| `emoji_text` | très grand chiffre/symbole au-dessus, couleur d'accent (pas d'emoji couleur : police sans emoji) |
+| `emoji_text` | très grand emoji, chiffre ou symbole au-dessus du titre |
 | `background` | `"#hex"`, liste de 2+ couleurs (dégradé animé) ou chemin d'image (zoom Ken Burns, relatif au JSON) |
 | `duration` | secondes (défaut 3) |
 | `animation` | `rise` (défaut), `zoom`, `slide`, `fade`, `typewriter` |
@@ -69,7 +69,7 @@ Champs d'une scène (tous optionnels sauf au moins un texte) :
 
 ## Règles
 
-- N'utilise pas d'emoji : la police n'en a pas, ils s'affichent en carrés.
+- Les emojis s'affichent en couleur partout (police `fonts/NotoColorEmoji.ttf`, licence OFL). Utilise-les avec modération : 1 par scène max dans le texte, ou un seul gros dans `emoji_text`.
 - Prévois ~1 s de lecture par 3 mots dans `duration`.
 - Nécessite `python3`, `Pillow` (`pip install pillow`) et `ffmpeg`.
 - Un exemple complet est dans `examples/demo.json`.

@@ -3,7 +3,7 @@
 
 Usage: python3 render.py storyboard.json [-o out.mp4]
 """
-import argparse, json, math, os, random, shutil, subprocess, sys, tempfile
+import argparse, json, math, os, random, re, shutil, subprocess, sys, tempfile
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 FORMATS = {"16:9": (1920, 1080), "9:16": (1080, 1920), "1:1": (1080, 1080), "4:5": (1080, 1350)}
@@ -33,6 +33,76 @@ def font(kind, size):
     return _font_cache[key]
 
 
+SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+EMOJI_FONT = os.path.join(SKILL_DIR, "fonts", "NotoColorEmoji.ttf")
+# one emoji cluster: base pictograph + optional skin tone / VS16 / ZWJ sequences, or a flag pair
+EMOJI_RE = re.compile(
+    "(?:[\U0001F1E6-\U0001F1FF]{2})|"
+    "(?:[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF\u2300-\u23FF\u2190-\u21FF\u3030\u303D\u00A9\u00AE\u2122]"
+    "[\U0001F3FB-\U0001F3FF\uFE0F]*"
+    "(?:\u200D[\U0001F000-\U0001FAFF\u2600-\u27BF\u2640\u2642\u2695][\U0001F3FB-\U0001F3FF\uFE0F]*)*)")
+_emoji_cache = {}
+
+
+def runs(text):
+    """Split text into [(is_emoji, chunk)]."""
+    out, pos = [], 0
+    for m in EMOJI_RE.finditer(text):
+        if m.start() > pos:
+            out.append((False, text[pos:m.start()]))
+        out.append((True, m.group()))
+        pos = m.end()
+    if pos < len(text):
+        out.append((False, text[pos:]))
+    return out
+
+
+def emoji_img(e, size):
+    key = (e, size)
+    if key not in _emoji_cache:
+        im = None
+        if os.path.exists(EMOJI_FONT):
+            f = ImageFont.truetype(EMOJI_FONT, 109)  # CBDT bitmap font only renders at 109
+            box = f.getbbox(e)
+            if box[2] > box[0]:
+                im = Image.new("RGBA", (box[2] + 4, 140), (0, 0, 0, 0))
+                ImageDraw.Draw(im).text((0, 0), e, font=f, embedded_color=True)
+                im = im.crop(im.getbbox() or (0, 0, 1, 1))
+                im = im.resize((max(1, int(im.width * size / im.height)), size), Image.LANCZOS)
+        _emoji_cache[key] = im
+    return _emoji_cache[key]
+
+
+def text_len(draw, text, fnt):
+    total = 0.0
+    for is_e, chunk in runs(text):
+        if is_e:
+            im = emoji_img(chunk, int(fnt.size * 0.95))
+            total += (im.width if im else 0) + fnt.size * 0.05
+        else:
+            total += draw.textlength(chunk, font=fnt)
+    return total
+
+
+def draw_text(layer, d, xy, text, fnt, fill, shadow=True):
+    x, y = xy
+    alpha = fill[3]
+    for is_e, chunk in runs(text):
+        if is_e:
+            im = emoji_img(chunk, int(fnt.size * 0.95))
+            if im is not None:
+                if alpha < 255:
+                    im = im.copy()
+                    im.putalpha(im.getchannel("A").point(lambda v: v * alpha // 255))
+                layer.alpha_composite(im, (int(x), int(y + fnt.size * 0.12)))
+                x += im.width + fnt.size * 0.05
+        else:
+            if shadow:
+                d.text((x + 3, y + 4), chunk, font=fnt, fill=(0, 0, 0, alpha // 3))
+            d.text((x, y), chunk, font=fnt, fill=fill)
+            x += d.textlength(chunk, font=fnt)
+
+
 def hex_rgb(c):
     c = c.lstrip("#")
     return tuple(int(c[i:i + 2], 16) for i in (0, 2, 4))
@@ -49,7 +119,7 @@ def wrap(draw, text, fnt, max_w):
         line = ""
         for word in para.split():
             test = f"{line} {word}".strip()
-            if draw.textlength(test, font=fnt) <= max_w or not line:
+            if text_len(draw, test, fnt) <= max_w or not line:
                 line = test
             else:
                 lines.append(line)
@@ -149,10 +219,9 @@ def render_scene_frame(scene, idx, size, t_sec, dur, style, base_dir):
                 f2 = font("bold" if f.size > unit * 0.06 else "regular", max(8, int(f.size * sc)))
             else:
                 f2 = f
-            lw = d.textlength(txt, font=f2)
+            lw = text_len(d, txt, f2)
             x = (w - lw) / 2 + dx
-            d.text((x + 3, ly + dy + 4), txt, font=f2, fill=(0, 0, 0, alpha // 3))  # soft shadow
-            d.text((x, ly + dy), txt, font=f2, fill=col + (alpha,))
+            draw_text(over, d, (x, ly + dy), txt, f2, col + (alpha,))
             ly += int(f.size * 1.25)
         y += bh + gap
     img = Image.alpha_composite(img, over)
