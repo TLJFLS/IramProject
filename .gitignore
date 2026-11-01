@@ -23,3 +23,8 @@
 /app/Config/core.php
 /app/Config/database.php
 /vendors/*
+
+# n8n
+.env
+n8n_data/
+postgres_data/
