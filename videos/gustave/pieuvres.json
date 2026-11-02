@@ -1,0 +1,52 @@
+{
+  "slug": "pieuvres",
+  "theme": "les pieuvres",
+  "title": "3 FAITS FOUS SUR LES PIEUVRES 🐙",
+  "intro": {
+    "board": "LES PIEUVRES",
+    "board_sub": "3 faits fous",
+    "emoji": "🐙",
+    "say": [
+      "Une pieuvre a trois cœurs 🤯",
+      "C'est Mr. Gustave, 3 faits fous !"
+    ]
+  },
+  "facts": [
+    {
+      "title": "Trois cœurs",
+      "emoji": "❤️",
+      "key": "3 cœurs",
+      "say": [
+        "Numéro 1 : une pieuvre a trois cœurs,",
+        "deux pour les branchies, un pour le corps !"
+      ]
+    },
+    {
+      "title": "Sang bleu",
+      "emoji": "💙",
+      "key": "sang bleu",
+      "say": [
+        "Numéro 2 : son sang est bleu,",
+        "grâce au cuivre qu'il contient !"
+      ]
+    },
+    {
+      "title": "Bras malins",
+      "emoji": "🧠",
+      "key": "2/3 des neurones",
+      "say": [
+        "Numéro 3 : les deux tiers de ses neurones",
+        "sont dans ses bras !"
+      ]
+    }
+  ],
+  "outro": {
+    "board": "Like si t'en savais aucun !",
+    "emoji": "👍",
+    "say": [
+      "Like si t'en savais aucun ! 👍"
+    ]
+  },
+  "music": false,
+  "caption": "🐙 Une pieuvre a trois cœurs… et du sang bleu !\n\n1️⃣ Trois cœurs ❤️\n2️⃣ Du sang bleu grâce au cuivre 💙\n3️⃣ Les deux tiers de ses neurones sont dans ses bras 🧠\n\nLequel t'a le plus choqué ? 1, 2 ou 3 ? 👇\nAbonne-toi pour un fait fou chaque jour avec Mr. Gustave 🤓\n\n#pieuvre #animaux #ocean #science #lesaviezvous #apprendresurtiktok #culturegenerale #education #fyp #pourtoi"
+}

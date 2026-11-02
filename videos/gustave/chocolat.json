@@ -1,0 +1,52 @@
+{
+  "slug": "chocolat",
+  "theme": "le chocolat",
+  "title": "3 FAITS FOUS SUR LE CHOCOLAT 🍫",
+  "intro": {
+    "board": "LE CHOCOLAT",
+    "board_sub": "3 faits fous",
+    "emoji": "🍫",
+    "say": [
+      "Avant, le cacao servait d'argent 🤯",
+      "C'est Mr. Gustave, 3 faits fous !"
+    ]
+  },
+  "facts": [
+    {
+      "title": "Monnaie aztèque",
+      "emoji": "🪙",
+      "key": "fèves = argent",
+      "say": [
+        "Numéro 1 : les Aztèques payaient",
+        "avec des fèves de cacao !"
+      ]
+    },
+    {
+      "title": "Danger chiens",
+      "emoji": "🐶",
+      "key": "toxique pour les chiens",
+      "say": [
+        "Numéro 2 : le chocolat est toxique",
+        "pour les chiens, ne leur en donne jamais !"
+      ]
+    },
+    {
+      "title": "Chocolat blanc",
+      "emoji": "🤍",
+      "key": "0 % de pâte de cacao",
+      "say": [
+        "Numéro 3 : le chocolat blanc n'a pas de pâte de cacao,",
+        "juste du beurre de cacao !"
+      ]
+    }
+  ],
+  "outro": {
+    "board": "Like si t'en savais aucun !",
+    "emoji": "👍",
+    "say": [
+      "Like si t'en savais aucun ! 👍"
+    ]
+  },
+  "music": false,
+  "caption": "🍫 Avant, le cacao servait d'argent !\n\n1️⃣ Les Aztèques payaient avec des fèves de cacao 🪙\n2️⃣ Le chocolat est toxique pour les chiens 🐶\n3️⃣ Le chocolat blanc n'a pas de pâte de cacao 🤍\n\nLequel t'a le plus choqué ? 1, 2 ou 3 ? 👇\nAbonne-toi pour un fait fou chaque jour avec Mr. Gustave 🤓\n\n#chocolat #food #histoire #science #lesaviezvous #apprendresurtiktok #culturegenerale #education #fyp #pourtoi"
+}

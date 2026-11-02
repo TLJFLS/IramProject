@@ -1,0 +1,52 @@
+{
+  "slug": "cerveau",
+  "theme": "le cerveau",
+  "title": "3 FAITS FOUS SUR LE CERVEAU 🧠",
+  "intro": {
+    "board": "LE CERVEAU",
+    "board_sub": "3 faits fous",
+    "emoji": "🧠",
+    "say": [
+      "Ton cerveau ne peut pas ressentir la douleur 🤯",
+      "C'est Mr. Gustave, 3 faits fous !"
+    ]
+  },
+  "facts": [
+    {
+      "title": "Zéro douleur",
+      "emoji": "🩺",
+      "key": "opéré éveillé",
+      "say": [
+        "Numéro 1 : le cerveau n'a pas de capteurs",
+        "de douleur. On peut l'opérer éveillé !"
+      ]
+    },
+    {
+      "title": "Gros mangeur",
+      "emoji": "⚡",
+      "key": "2 % du poids, 20 % d'énergie",
+      "say": [
+        "Numéro 2 : il pèse 2 % de ton corps",
+        "mais consomme 20 % de ton énergie !"
+      ]
+    },
+    {
+      "title": "86 milliards",
+      "emoji": "🔌",
+      "key": "86 milliards de neurones",
+      "say": [
+        "Numéro 3 : ton cerveau contient environ",
+        "86 milliards de neurones !"
+      ]
+    }
+  ],
+  "outro": {
+    "board": "Like si t'en savais aucun !",
+    "emoji": "👍",
+    "say": [
+      "Like si t'en savais aucun ! 👍"
+    ]
+  },
+  "music": false,
+  "caption": "🧠 Ton cerveau ne peut pas ressentir la douleur… et c'est pas le plus fou !\n\n1️⃣ Pas de capteurs de douleur : on peut l'opérer éveillé 🩺\n2️⃣ 2 % de ton poids, 20 % de ton énergie ⚡\n3️⃣ Environ 86 milliards de neurones 🔌\n\nLequel t'a le plus choqué ? 1, 2 ou 3 ? 👇\nAbonne-toi pour un fait fou chaque jour avec Mr. Gustave 🤓\n\n#cerveau #corpshumain #neuroscience #science #lesaviezvous #apprendresurtiktok #culturegenerale #education #fyp #pourtoi"
+}

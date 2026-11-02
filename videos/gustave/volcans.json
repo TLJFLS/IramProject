@@ -1,0 +1,52 @@
+{
+  "slug": "volcans",
+  "theme": "les volcans",
+  "title": "3 FAITS FOUS SUR LES VOLCANS 🌋",
+  "intro": {
+    "board": "LES VOLCANS",
+    "board_sub": "3 faits fous",
+    "emoji": "🌋",
+    "say": [
+      "Un volcan a fait le bruit le plus fort de l'histoire 🤯",
+      "C'est Mr. Gustave, 3 faits fous !"
+    ]
+  },
+  "facts": [
+    {
+      "title": "Krakatoa 1883",
+      "emoji": "💥",
+      "key": "entendu à 4 800 km",
+      "say": [
+        "Numéro 1 : en 1883, le Krakatoa a été",
+        "entendu à près de 4 800 kilomètres !"
+      ]
+    },
+    {
+      "title": "Lave brûlante",
+      "emoji": "🔥",
+      "key": "jusqu'à 1 200 °C",
+      "say": [
+        "Numéro 2 : la lave peut atteindre",
+        "environ 1200 degrés !"
+      ]
+    },
+    {
+      "title": "Olympus Mons",
+      "emoji": "🔴",
+      "key": "22 km de haut",
+      "say": [
+        "Numéro 3 : sur Mars, Olympus Mons mesure",
+        "22 kilomètres, deux fois et demie l'Everest !"
+      ]
+    }
+  ],
+  "outro": {
+    "board": "Like si t'en savais aucun !",
+    "emoji": "👍",
+    "say": [
+      "Like si t'en savais aucun ! 👍"
+    ]
+  },
+  "music": false,
+  "caption": "🌋 Un volcan a fait le bruit le plus fort de l'histoire !\n\n1️⃣ Le Krakatoa entendu à près de 4 800 km en 1883 💥\n2️⃣ La lave peut atteindre environ 1 200 °C 🔥\n3️⃣ Sur Mars, Olympus Mons fait 22 km de haut 🔴\n\nLequel t'a le plus choqué ? 1, 2 ou 3 ? 👇\nAbonne-toi pour un fait fou chaque jour avec Mr. Gustave 🤓\n\n#volcan #nature #mars #science #lesaviezvous #apprendresurtiktok #culturegenerale #education #fyp #pourtoi"
+}
