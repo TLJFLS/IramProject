@@ -1,0 +1,52 @@
+{
+  "slug": "miel",
+  "theme": "le miel",
+  "title": "3 FAITS FOUS SUR LE MIEL 🍯",
+  "intro": {
+    "board": "LE MIEL",
+    "board_sub": "3 faits fous",
+    "emoji": "🍯",
+    "say": [
+      "On a trouvé du miel encore mangeable dans des tombes égyptiennes 🤯",
+      "C'est Mr. Gustave, 3 faits fous !"
+    ]
+  },
+  "facts": [
+    {
+      "title": "Éternel",
+      "emoji": "🏺",
+      "key": "plus de 3 000 ans",
+      "say": [
+        "Numéro 1 : du miel vieux de plus de 3000 ans",
+        "était encore comestible !"
+      ]
+    },
+    {
+      "title": "Toute une vie",
+      "emoji": "🐝",
+      "key": "1/12 de cuillère",
+      "say": [
+        "Numéro 2 : une abeille produit environ",
+        "un douzième de cuillère de miel dans sa vie !"
+      ]
+    },
+    {
+      "title": "La danse",
+      "emoji": "💃",
+      "key": "danse frétillante",
+      "say": [
+        "Numéro 3 : les abeilles dansent",
+        "pour montrer où sont les fleurs !"
+      ]
+    }
+  ],
+  "outro": {
+    "board": "Like si t'en savais aucun !",
+    "emoji": "👍",
+    "say": [
+      "Like si t'en savais aucun ! 👍"
+    ]
+  },
+  "music": false,
+  "caption": "🍯 Du miel de plus de 3 000 ans encore mangeable !\n\n1️⃣ Du miel des tombes égyptiennes encore comestible 🏺\n2️⃣ Une abeille fait 1/12 de cuillère de miel dans sa vie 🐝\n3️⃣ Les abeilles dansent pour indiquer les fleurs 💃\n\nLequel t'a le plus choqué ? 1, 2 ou 3 ? 👇\nAbonne-toi pour un fait fou chaque jour avec Mr. Gustave 🤓\n\n#miel #abeilles #nature #science #lesaviezvous #apprendresurtiktok #culturegenerale #education #fyp #pourtoi"
+}

@@ -1,0 +1,52 @@
+{
+  "slug": "pizza",
+  "theme": "la pizza",
+  "title": "3 FAITS FOUS SUR LA PIZZA 🍕",
+  "intro": {
+    "board": "LA PIZZA",
+    "board_sub": "3 faits fous",
+    "emoji": "🍕",
+    "say": [
+      "La pizza à l'ananas a été inventée au Canada 🤯",
+      "C'est Mr. Gustave, 3 faits fous !"
+    ]
+  },
+  "facts": [
+    {
+      "title": "Hawaïenne",
+      "emoji": "🍍",
+      "key": "Canada, 1962",
+      "say": [
+        "Numéro 1 : la pizza hawaïenne est née",
+        "au Canada en 1962, pas à Hawaï !"
+      ]
+    },
+    {
+      "title": "Pizza spatiale",
+      "emoji": "🚀",
+      "key": "livrée dans l'espace",
+      "say": [
+        "Numéro 2 : en 2001, une pizza a été livrée",
+        "à la Station spatiale internationale !"
+      ]
+    },
+    {
+      "title": "UNESCO",
+      "emoji": "🏅",
+      "key": "patrimoine mondial",
+      "say": [
+        "Numéro 3 : l'art du pizzaïolo napolitain",
+        "est inscrit à l'UNESCO depuis 2017 !"
+      ]
+    }
+  ],
+  "outro": {
+    "board": "Like si t'en savais aucun !",
+    "emoji": "👍",
+    "say": [
+      "Like si t'en savais aucun ! 👍"
+    ]
+  },
+  "music": false,
+  "caption": "🍕 La pizza à l'ananas a été inventée… au Canada !\n\n1️⃣ La hawaïenne est née au Canada en 1962 🍍\n2️⃣ Une pizza livrée dans l'espace en 2001 🚀\n3️⃣ L'art du pizzaïolo napolitain est à l'UNESCO 🏅\n\nLequel t'a le plus choqué ? 1, 2 ou 3 ? 👇\nAbonne-toi pour un fait fou chaque jour avec Mr. Gustave 🤓\n\n#pizza #food #italie #science #lesaviezvous #apprendresurtiktok #culturegenerale #education #fyp #pourtoi"
+}

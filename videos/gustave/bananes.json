@@ -1,0 +1,52 @@
+{
+  "slug": "bananes",
+  "theme": "les bananes",
+  "title": "3 FAITS FOUS SUR LES BANANES 🍌",
+  "intro": {
+    "board": "LES BANANES",
+    "board_sub": "3 faits fous",
+    "emoji": "🍌",
+    "say": [
+      "Les bananes sont légèrement radioactives 🤯",
+      "C'est Mr. Gustave, 3 faits fous !"
+    ]
+  },
+  "facts": [
+    {
+      "title": "Radioactive",
+      "emoji": "☢️",
+      "key": "potassium 40",
+      "say": [
+        "Numéro 1 : à cause de leur potassium,",
+        "les bananes sont un tout petit peu radioactives !"
+      ]
+    },
+    {
+      "title": "Une baie",
+      "emoji": "🫐",
+      "key": "banane = baie",
+      "say": [
+        "Numéro 2 : pour les botanistes,",
+        "la banane est une baie, mais pas la fraise !"
+      ]
+    },
+    {
+      "title": "Pas un arbre",
+      "emoji": "🌿",
+      "key": "herbe géante",
+      "say": [
+        "Numéro 3 : le bananier n'est pas un arbre,",
+        "c'est une herbe géante !"
+      ]
+    }
+  ],
+  "outro": {
+    "board": "Like si t'en savais aucun !",
+    "emoji": "👍",
+    "say": [
+      "Like si t'en savais aucun ! 👍"
+    ]
+  },
+  "music": false,
+  "caption": "🍌 Les bananes sont légèrement radioactives !\n\n1️⃣ Un tout petit peu radioactives à cause du potassium ☢️\n2️⃣ La banane est une baie, pas la fraise 🫐\n3️⃣ Le bananier est une herbe géante, pas un arbre 🌿\n\nLequel t'a le plus choqué ? 1, 2 ou 3 ? 👇\nAbonne-toi pour un fait fou chaque jour avec Mr. Gustave 🤓\n\n#banane #fruits #food #science #lesaviezvous #apprendresurtiktok #culturegenerale #education #fyp #pourtoi"
+}

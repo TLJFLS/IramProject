@@ -1,0 +1,52 @@
+{
+  "slug": "cafe",
+  "theme": "le café",
+  "title": "3 FAITS FOUS SUR LE CAFÉ ☕",
+  "intro": {
+    "board": "LE CAFÉ",
+    "board_sub": "3 faits fous",
+    "emoji": "☕",
+    "say": [
+      "Le café est en fait la graine d'un fruit 🤯",
+      "C'est Mr. Gustave, 3 faits fous !"
+    ]
+  },
+  "facts": [
+    {
+      "title": "Un fruit",
+      "emoji": "🍒",
+      "key": "cerise de café",
+      "say": [
+        "Numéro 1 : un grain de café est la graine",
+        "d'un petit fruit rouge, la cerise de café !"
+      ]
+    },
+    {
+      "title": "Champions",
+      "emoji": "🇫🇮",
+      "key": "la Finlande",
+      "say": [
+        "Numéro 2 : les plus gros buveurs de café",
+        "au monde sont les Finlandais !"
+      ]
+    },
+    {
+      "title": "Déca",
+      "emoji": "🤏",
+      "key": "un peu de caféine",
+      "say": [
+        "Numéro 3 : le café décaféiné",
+        "contient quand même un peu de caféine !"
+      ]
+    }
+  ],
+  "outro": {
+    "board": "Like si t'en savais aucun !",
+    "emoji": "👍",
+    "say": [
+      "Like si t'en savais aucun ! 👍"
+    ]
+  },
+  "music": false,
+  "caption": "☕ Ton café est en fait la graine d'un fruit !\n\n1️⃣ Le grain de café vient d'une cerise rouge 🍒\n2️⃣ Les Finlandais sont les plus gros buveurs de café 🇫🇮\n3️⃣ Le déca contient quand même un peu de caféine 🤏\n\nLequel t'a le plus choqué ? 1, 2 ou 3 ? 👇\nAbonne-toi pour un fait fou chaque jour avec Mr. Gustave 🤓\n\n#cafe #coffee #food #science #lesaviezvous #apprendresurtiktok #culturegenerale #education #fyp #pourtoi"
+}

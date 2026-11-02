@@ -1,0 +1,52 @@
+{
+  "slug": "chats",
+  "theme": "les chats",
+  "title": "3 FAITS FOUS SUR LES CHATS 🐱",
+  "intro": {
+    "board": "LES CHATS",
+    "board_sub": "3 faits fous",
+    "emoji": "🐱",
+    "say": [
+      "Ton chat ne sent pas le goût du sucre 🤯",
+      "C'est Mr. Gustave, 3 faits fous !"
+    ]
+  },
+  "facts": [
+    {
+      "title": "Zéro sucré",
+      "emoji": "🍬",
+      "key": "pas de goût sucré",
+      "say": [
+        "Numéro 1 : les chats n'ont pas de récepteur",
+        "pour le goût sucré !"
+      ]
+    },
+    {
+      "title": "Gros dormeurs",
+      "emoji": "😴",
+      "key": "12 à 16 h par jour",
+      "say": [
+        "Numéro 2 : un chat dort",
+        "entre 12 et 16 heures par jour !"
+      ]
+    },
+    {
+      "title": "Miaou",
+      "emoji": "🗣️",
+      "key": "miaou = pour toi",
+      "say": [
+        "Numéro 3 : les chats adultes miaulent",
+        "surtout pour parler aux humains !"
+      ]
+    }
+  ],
+  "outro": {
+    "board": "Like si t'en savais aucun !",
+    "emoji": "👍",
+    "say": [
+      "Like si t'en savais aucun ! 👍"
+    ]
+  },
+  "music": false,
+  "caption": "🐱 Ton chat ne sent pas le goût du sucre !\n\n1️⃣ Aucun récepteur pour le goût sucré 🍬\n2️⃣ Il dort entre 12 et 16 heures par jour 😴\n3️⃣ Les chats adultes miaulent surtout pour les humains 🗣️\n\nLequel t'a le plus choqué ? 1, 2 ou 3 ? 👇\nAbonne-toi pour un fait fou chaque jour avec Mr. Gustave 🤓\n\n#chat #chats #animaux #science #lesaviezvous #apprendresurtiktok #culturegenerale #education #fyp #pourtoi"
+}
