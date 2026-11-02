@@ -1,0 +1,64 @@
+{
+  "format": "9:16",
+  "fps": 30,
+  "music": "happy",
+  "output": "videos/demo.mp4",
+  "style": {
+    "accent": "#ffd166",
+    "particles": true,
+    "progress_bar": true
+  },
+  "scenes": [
+    {
+      "title": "3 astuces pour mieux dormir 😴",
+      "background": [
+        "#141e30",
+        "#243b55"
+      ],
+      "duration": 3,
+      "animation": "zoom"
+    },
+    {
+      "emoji_text": "📵",
+      "title": "Pas d'écran",
+      "text": "Coupe téléphone et ordi 1h avant de te coucher.",
+      "background": [
+        "#4b134f",
+        "#c94b4b"
+      ],
+      "duration": 4
+    },
+    {
+      "emoji_text": "❄️",
+      "title": "Chambre fraîche",
+      "text": "18 °C, c'est la température idéale.",
+      "background": [
+        "#0f2027",
+        "#2c5364"
+      ],
+      "duration": 4,
+      "animation": "slide"
+    },
+    {
+      "emoji_text": "⏰",
+      "title": "Même horaire",
+      "text": "Couche-toi et lève-toi à heure fixe, même le week-end.",
+      "background": [
+        "#134e5e",
+        "#71b280"
+      ],
+      "duration": 4,
+      "animation": "typewriter"
+    },
+    {
+      "title": "Bonne nuit 🌙",
+      "text": "Abonne-toi pour plus d'astuces ✨",
+      "background": [
+        "#232526",
+        "#414345"
+      ],
+      "duration": 3,
+      "animation": "zoom"
+    }
+  ]
+}
