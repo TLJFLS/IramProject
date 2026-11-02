@@ -25,7 +25,7 @@ Pour chaque sujet tu produis un MP4 prêt à poster + sa description. Pas de que
 
 ## Règles d'écriture (TikTok)
 
-- **Durée 15–22 s** : ~55–65 mots au total. Le script calcule le minutage tout seul (~3,7 mots/s).
+- **Durée 15–22 s** : ~55–65 mots au total. Le script calcule le minutage tout seul.
 - **Accroche** = 1re ligne de `intro.say`, le fait le plus choquant, dès la 1re seconde, avec 🤯.
   2e ligne : « C'est Mr. Gustave, 3 faits fous ! » (il se présente toujours).
 - **Chaque fait** : 2 lignes de 5–8 mots ; la 1re commence par « Numéro N : ».
@@ -37,6 +37,18 @@ Pour chaque sujet tu produis un MP4 prêt à poster + sa description. Pas de que
 - **Description** (`caption`) : accroche + les 3 faits en 1 ligne chacun avec emoji + question
   (« Lequel t'a le plus choqué ? 1, 2 ou 3 ? 👇 ») + « Abonne-toi pour un fait fou chaque jour avec
   Mr. Gustave 🤓 » + 8–10 hashtags (sujet + #science #lesaviezvous #apprendresurtiktok #culturegenerale #fyp #pourtoi).
+
+## Voix off (edge-tts)
+
+- Par défaut Mr. Gustave **parle** avec la voix `fr-FR-HenriNeural` (edge-tts, gratuit, sans clé).
+  Prérequis : `pip install edge-tts` et le domaine `speech.platform.bing.com` autorisé dans le réseau
+  de l'environnement. Le script passe par `HTTPS_PROXY` tout seul.
+- Le minutage vient de la voix : durée réelle des phrases, mot surligné = mot prononcé,
+  bouche animée selon le volume de la voix. Les emojis ne sont pas lus.
+- Écris les nombres comme on les dit s'il y a un doute (« près de 400 ans » plutôt que « ~400 »).
+- Si la voix échoue (réseau, edge-tts absent), la vidéo est quand même générée avec sous-titres seuls.
+  `--no-voice` force ce mode ; `"voice": false` dans un épisode aussi.
+- edge-tts n'est pas officiel (Microsoft peut le casser) : ElevenLabs pourra le remplacer plus tard.
 
 ## Ce qui est automatique (ne pas refaire à la main)
 

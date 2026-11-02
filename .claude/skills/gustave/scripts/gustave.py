@@ -4,7 +4,7 @@
 Usage : python3 gustave.py episode1.json [episode2.json ...] [--out-dir videos/gustave]
 Chaque épisode produit <slug>.mp4 et <slug>.txt (description + hashtags à copier).
 """
-import argparse, json, math, os, random, subprocess, sys, tempfile
+import argparse, asyncio, json, math, os, random, re, subprocess, sys, tempfile
 from PIL import Image, ImageDraw, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -20,36 +20,147 @@ YEL, PINK, BLUE, ORANGE = (255, 230, 120), (255, 170, 190), (150, 210, 255), (25
 rnd = random.Random(7)
 
 # remplis par build_timeline()
-SCRIPT = []      # (début, fin, texte du sous-titre)
+SCRIPT = []      # (début, fin, texte du sous-titre, débuts des mots ou None)
+ENVELOPE = None  # volume de la voix par image (0..1) pour animer la bouche
+VOICE = "fr-FR-HenriNeural"
+SR = 24000
 BOARD = []       # (début, clé du tableau)
 POINTS = []      # instants où le prof pointe le tableau
 
 
-def build_timeline(ep):
-    """Calcule le minutage à partir du nombre de mots (≈ 3 mots/s)."""
-    SCRIPT.clear(); BOARD.clear(); POINTS.clear()
+def episode_lines(ep):
     sections = [("intro", ep["intro"]["say"])]
     for i, f in enumerate(ep["facts"]):
         sections.append((f"fact{i}", f["say"]))
     sections.append(("outro", ep["outro"]["say"]))
+    return sections
+
+
+def build_timeline(ep, voice=None):
+    """Minutage : durée réelle de la voix si `voice` est fourni, sinon ≈ 3,7 mots/s.
+    voice : {texte: (n_échantillons, [débuts des mots en s])}"""
+    SCRIPT.clear(); BOARD.clear(); POINTS.clear()
     t = 0.1
-    for key, lines in sections:
+    for key, lines in episode_lines(ep):
         BOARD.append((max(0.0, t - 0.1), key))
         if key.startswith("fact"):
             POINTS.append(t)
         for line in lines:
-            n = len(line.split())
-            d = max(1.0, 0.27 * n + 0.15)
-            SCRIPT.append((t, t + d, line))
-            t += d + 0.08
-        t += 0.25
+            if voice:
+                n_samp, starts = voice[line]
+                d = n_samp / SR + 0.02
+            else:
+                d = max(1.0, 0.27 * len(line.split()) + 0.15)
+                starts = None
+            SCRIPT.append((t, t + d, line, starts))
+            t += d + (0.05 if voice else 0.08)
+        t += 0.2
     return t + 0.4
 
 
+def tts_text(line):
+    """Texte envoyé à la synthèse vocale : sans emojis ni symboles décoratifs."""
+    txt = "".join(ch for is_e, ch in R.runs(line) if not is_e)
+    txt = txt.replace("~", "environ ").replace("≈", "environ ").replace("%", " pour cent")
+    return re.sub(r"\s+", " ", txt).strip()
+
+
+async def _synth(line, path):
+    import edge_tts
+    c = edge_tts.Communicate(tts_text(line), VOICE, rate="+12%", boundary="WordBoundary",
+                             proxy=os.environ.get("HTTPS_PROXY") or None)
+    words = []
+    with open(path, "wb") as fh:
+        async for ch in c.stream():
+            if ch["type"] == "audio":
+                fh.write(ch["data"])
+            elif ch["type"] == "WordBoundary":
+                words.append((ch["offset"] / 1e7, ch["text"]))
+    return words
+
+
+def synth_voice(ep, tmp):
+    """Génère la voix ligne par ligne avec edge-tts. Renvoie {texte: (échantillons numpy, débuts des mots)}."""
+    import numpy as np
+    out = {}
+    k = 0
+    for _, lines in episode_lines(ep):
+        for line in lines:
+            mp3 = os.path.join(tmp, f"l{k}.mp3")
+            k += 1
+            words = asyncio.run(_synth(line, mp3))
+            raw = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", mp3, "-f", "s16le", "-ac", "1",
+                                  "-ar", str(SR), "-"], capture_output=True, check=True).stdout
+            a = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+            nz = np.where(np.abs(a) > 0.02)[0]
+            if len(nz):  # coupe les silences : 0,05 s avant, 0,15 s après
+                i0 = max(0, nz[0] - int(0.05 * SR))
+                a = a[i0:nz[-1] + int(0.15 * SR)]
+                words = [(o - i0 / SR, w) for o, w in words]
+            out[line] = (a, align_words(display_words(line), words, len(a) / SR))
+    return out
+
+
+def _norm(w):
+    return "".join(c for c in w.lower() if c.isalnum())
+
+
+def align_words(disp, bounds, dur):
+    """Associe chaque mot affiché à son instant dans la voix (par le texte, puis interpolation)."""
+    starts = [None] * len(disp)
+    j = 0
+    for i, w in enumerate(disp):
+        nw = _norm(w)
+        for k in range(j, min(j + 3, len(bounds))):
+            nb = _norm(bounds[k][1])
+            if nw and nb and (nw == nb or nw.startswith(nb) or nb.startswith(nw)):
+                starts[i] = max(0.0, bounds[k][0])
+                j = k + 1
+                break
+    known = [(i, v) for i, v in enumerate(starts) if v is not None]
+    if not known:
+        return [dur * i / len(disp) for i in range(len(disp))]
+    for i in range(len(disp)):
+        if starts[i] is None:
+            prev = max([(a, v) for a, v in known if a < i], default=(-1, 0.0))
+            nxt = min([(a, v) for a, v in known if a > i], default=(len(disp), dur))
+            starts[i] = prev[1] + (nxt[1] - prev[1]) * (i - prev[0]) / (nxt[0] - prev[0])
+    return starts
+
+
+def display_words(txt):
+    """Mots des sous-titres : « : », « ! » et les emojis seuls restent collés au mot précédent."""
+    words = []
+    for w in txt.split():
+        if words and not any(c.isalnum() for c in w):
+            words[-1] += " " + w
+        else:
+            words.append(w)
+    return words
+
+
+def voice_track(voice, dur):
+    """Assemble la piste voix complète et calcule l'enveloppe pour la bouche."""
+    import numpy as np
+    global ENVELOPE
+    track = np.zeros(int(dur * SR) + SR, dtype=np.float32)
+    for s, e, line, _ in SCRIPT:
+        a = voice[line][0]
+        i = int(s * SR)
+        track[i:i + len(a)] += a[:len(track) - i]
+    hop = SR // FPS
+    n = len(track) // hop
+    rms = np.sqrt((track[:n * hop].reshape(n, hop) ** 2).mean(axis=1))
+    peak = np.percentile(rms[rms > 0.01], 95) if (rms > 0.01).any() else 1.0
+    env = np.clip(rms / peak, 0, 1)
+    ENVELOPE = np.convolve(env, [0.25, 0.5, 0.25], mode="same")
+    return track
+
+
 def speaking(t):
-    for s, e, txt in SCRIPT:
-        if s <= t <= e:
-            return s, e, txt
+    for item in SCRIPT:
+        if item[0] <= t <= item[1]:
+            return item
     return None
 
 
@@ -320,7 +431,9 @@ def draw_prof(img, t):
 
     # mouth
     my = cy + 70
-    if talk:
+    if ENVELOPE is not None:
+        o = float(ENVELOPE[min(len(ENVELOPE) - 1, int(t * FPS))])
+    elif talk:
         o = abs(math.sin(t * 17)) * (0.45 + 0.55 * abs(math.sin(t * 6.3 + 1)))
     else:
         o = 0
@@ -365,15 +478,13 @@ def subtitles(img, t):
     talk = speaking(t)
     if not talk:
         return
-    s, e, txt = talk
-    words = []
-    for w in txt.split():  # « : », « ! » et les emojis seuls restent collés au mot précédent
-        if words and not any(c.isalnum() for c in w):
-            words[-1] += " " + w
-        else:
-            words.append(w)
+    s, e, txt, starts = talk
+    words = display_words(txt)
     per = (e - s) / len(words)
     cur = min(len(words) - 1, int((t - s) / per))
+    if starts and len(starts) == len(words):  # minutage exact de la voix
+        cur = max([0] + [i for i, w0 in enumerate(starts) if s + w0 <= t])
+        per = 0.0
     g0 = (cur // SUB_GROUP) * SUB_GROUP
     group = list(range(g0, min(len(words), g0 + SUB_GROUP)))
     base = R.font("bold", 84)
@@ -397,7 +508,7 @@ def subtitles(img, t):
         for i, wl in line:
             w = words[i]
             if i == cur:  # mot actif : pastille jaune + petit rebond
-                k = (t - s - i * per) / 0.12
+                k = (t - s - (starts[i] if starts and len(starts) == len(words) else i * per)) / 0.12
                 sc = 1.0 + 0.12 * math.sin(min(1.0, max(0.0, k)) * math.pi)
                 f = R.font("bold", int(84 * sc))
                 ww = R.text_len(d, w, f)
@@ -418,15 +529,25 @@ def subtitles(img, t):
 
 
 
-def render_episode(ep, out_dir):
-    dur = build_timeline(ep)
+def render_episode(ep, out_dir, use_voice=True):
+    global ENVELOPE
+    ENVELOPE = None
+    tmp = tempfile.mkdtemp()
+    voice = None
+    if use_voice and ep.get("voice", True):
+        try:
+            voice = synth_voice(ep, tmp)
+        except Exception as exc:  # pas de réseau / edge-tts absent : vidéo sans voix
+            print(f"  voix indisponible ({exc.__class__.__name__}) -> sous-titres seuls", flush=True)
+    dur = build_timeline(ep, {k: (len(v[0]), v[1]) for k, v in voice.items()} if voice else None)
+    if voice:
+        track = voice_track(voice, dur)
     slug = ep["slug"]
     out = os.path.join(out_dir, slug + ".mp4")
     print(f"[{slug}] {dur:.1f}s", flush=True)
     bg = classroom(ep["title"])
     desk_l = desk()
     boards = board_layers(ep)
-    tmp = tempfile.mkdtemp()
     silent = os.path.join(tmp, "v.mp4")
     enc = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
                             "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-preset", "medium",
@@ -453,14 +574,28 @@ def render_episode(ep, out_dir):
     enc.stdin.close()
     enc.wait()
     music = ep.get("music", False)
+    inputs, filt = ["-i", silent], []
+    if voice:
+        import numpy as np, wave
+        vpath = os.path.join(tmp, "voice.wav")
+        with wave.open(vpath, "wb") as wf:
+            wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(SR)
+            wf.writeframes((np.clip(track, -1, 1) * 32767).astype(np.int16).tobytes())
+        inputs += ["-i", vpath]
     if music:
-        audio = os.path.join(tmp, "a.wav")
-        R.music_track(audio, dur, music if isinstance(music, str) else "happy")
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", silent, "-i", audio, "-c:v", "copy",
-                        "-af", "volume=0.6", "-c:a", "aac", "-b:a", "160k", "-shortest", out], check=True)
-    else:  # sans musique : on ajoute un son tendance dans TikTok. Piste silencieuse pour la compatibilité.
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", silent, "-f", "lavfi", "-i",
-                        "anullsrc=r=44100:cl=stereo", "-c:v", "copy", "-c:a", "aac", "-shortest", out], check=True)
+        mpath = os.path.join(tmp, "m.wav")
+        R.music_track(mpath, dur, music if isinstance(music, str) else "happy")
+        inputs += ["-i", mpath]
+    if voice and music:
+        filt = ["-filter_complex", "[2:a]volume=0.25[m];[1:a][m]amix=inputs=2:duration=first:normalize=0[a]",
+                "-map", "0:v", "-map", "[a]"]
+    elif voice or music:
+        filt = ["-map", "0:v", "-map", "1:a"]
+    else:  # sans son : piste silencieuse pour la compatibilité
+        inputs += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
+        filt = ["-map", "0:v", "-map", "1:a"]
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *inputs, *filt, "-c:v", "copy", "-c:a", "aac",
+                    "-b:a", "160k", "-ar", "44100", "-shortest", out], check=True)
     with open(os.path.join(out_dir, slug + ".txt"), "w", encoding="utf-8") as fh:
         fh.write(ep.get("caption", "").strip() + "\n")
     print(f"[{slug}] prêt : {out}", flush=True)
@@ -471,11 +606,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("episodes", nargs="+")
     ap.add_argument("--out-dir", default="videos/gustave")
+    ap.add_argument("--no-voice", action="store_true", help="sous-titres seuls, sans voix off")
     args = ap.parse_args()
     os.makedirs(args.out_dir, exist_ok=True)
     for path in args.episodes:
         with open(path, encoding="utf-8") as fh:
-            render_episode(json.load(fh), args.out_dir)
+            render_episode(json.load(fh), args.out_dir, use_voice=not args.no_voice)
 
 
 if __name__ == "__main__":
