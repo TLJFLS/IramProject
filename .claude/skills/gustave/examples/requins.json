@@ -1,0 +1,52 @@
+{
+  "slug": "requins",
+  "theme": "les requins",
+  "title": "3 FAITS FOUS SUR LES REQUINS 🦈",
+  "intro": {
+    "board": "LES REQUINS",
+    "board_sub": "3 faits fous",
+    "emoji": "🦈",
+    "say": [
+      "Les requins sont plus vieux que les arbres 🤯",
+      "C'est Mr. Gustave, 3 faits fous !"
+    ]
+  },
+  "facts": [
+    {
+      "title": "Avant les arbres",
+      "emoji": "🌳",
+      "key": "450 millions d'années",
+      "say": [
+        "Numéro 1 : 450 millions d'années de requins,",
+        "contre 390 pour les arbres !"
+      ]
+    },
+    {
+      "title": "Zéro os",
+      "emoji": "🦴",
+      "key": "100 % cartilage",
+      "say": [
+        "Numéro 2 : un requin n'a aucun os,",
+        "que du cartilage, comme ton nez !"
+      ]
+    },
+    {
+      "title": "400 ans",
+      "emoji": "🎂",
+      "key": "requin du Groenland",
+      "say": [
+        "Numéro 3 : le requin du Groenland",
+        "peut vivre près de 400 ans !"
+      ]
+    }
+  ],
+  "outro": {
+    "board": "Like si t'en savais aucun !",
+    "emoji": "👍",
+    "say": [
+      "Like si t'en savais aucun ! 👍"
+    ]
+  },
+  "music": false,
+  "caption": "🦈 3 faits fous sur les requins que personne ne t'a jamais dit !\n\n1️⃣ Ils existaient avant les arbres 🌳\n2️⃣ Ils n'ont pas un seul os 🦴\n3️⃣ Certains vivent près de 400 ans 🎂\n\nLequel t'a le plus choqué ? 1, 2 ou 3 ? 👇\nAbonne-toi pour un fait fou chaque jour avec Mr. Gustave 🤓\n\n#requin #science #lesaviezvous #apprendresurtiktok #culturegenerale #animaux #education #fyp #pourtoi"
+}

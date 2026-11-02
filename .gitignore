@@ -28,3 +28,4 @@
 videos/*.mp4
 __pycache__/
 *.pyc
+videos/**/*.mp4
