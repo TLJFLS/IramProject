@@ -94,23 +94,23 @@ def street_front():
     x = 0
     while x < w:
         bw = rnd.randint(380, 520)
-        floors = rnd.randint(3, 4)
-        fh = 150
-        top = SIDEWALK_Y - 190 - floors * fh
+        floors = rnd.randint(2, 3)
+        fh = 250
+        top = SIDEWALK_Y - 430 - floors * fh
         brick = rnd.choice([(150, 70, 55), (125, 60, 50), (170, 95, 70), (110, 75, 65), (140, 110, 90)])
         d.rectangle((x, top, x + bw, SIDEWALK_Y), fill=brick + (255,))
         d.rectangle((x - 8, top - 22, x + bw + 8, top + 6), fill=lerp(brick, (40, 30, 30), 0.5) + (255,))  # cornice
         cols = 3 if bw < 450 else 4
         cw = bw / cols
         for f in range(floors):
-            wy = top + 30 + f * fh
+            wy = top + 45 + f * fh
             for c in range(cols):
                 wx = int(x + c * cw + cw * 0.22)
                 ww = int(cw * 0.56)
                 lit = rnd.random() < 0.45
-                d.rectangle((wx - 6, wy - 6, wx + ww + 6, wy + 96), fill=(235, 225, 210, 255))
-                d.rectangle((wx, wy, wx + ww, wy + 90), fill=(255, 205, 120, 255) if lit else (40, 45, 70, 255))
-                d.line([(wx + ww // 2, wy), (wx + ww // 2, wy + 90)], fill=(235, 225, 210, 255), width=4)
+                d.rectangle((wx - 6, wy - 6, wx + ww + 6, wy + 156), fill=(235, 225, 210, 255))
+                d.rectangle((wx, wy, wx + ww, wy + 150), fill=(255, 205, 120, 255) if lit else (40, 45, 70, 255))
+                d.line([(wx + ww // 2, wy), (wx + ww // 2, wy + 150)], fill=(235, 225, 210, 255), width=4)
         if rnd.random() < 0.7:  # fire escape
             fx0, fx1 = int(x + cw * 0.1), int(x + cw * 2.0)
             for f in range(1, floors):
@@ -122,14 +122,14 @@ def street_front():
                 if f < floors - 1:
                     d.line([(fx0 + 20, py), (fx1 - 30, py + fh - 40)], fill=(25, 25, 30, 255), width=6)
         # shop
-        sy = SIDEWALK_Y - 190
+        sy = SIDEWALK_Y - 430
         d.rectangle((x + 10, sy, x + bw - 10, SIDEWALK_Y), fill=(30, 30, 38, 255))
-        d.rectangle((x + 30, sy + 70, x + bw - 140, SIDEWALK_Y - 10), fill=(255, 225, 160, 255))
-        d.rectangle((x + bw - 120, sy + 60, x + bw - 40, SIDEWALK_Y), fill=(80, 50, 40, 255))
+        d.rectangle((x + 30, sy + 110, x + bw - 140, SIDEWALK_Y - 40), fill=(255, 225, 160, 255))
+        d.rectangle((x + bw - 125, sy + 90, x + bw - 35, SIDEWALK_Y), fill=(80, 50, 40, 255))
         aw = rnd.choice([(200, 40, 50), (30, 110, 70), (30, 70, 150), (220, 140, 30)])
         for i in range(0, bw - 20, 40):
-            d.rectangle((x + 10 + i, sy, x + 30 + i, sy + 55), fill=aw + (255,))
-            d.rectangle((x + 30 + i, sy, x + 50 + i, sy + 55), fill=(245, 240, 230, 255))
+            d.rectangle((x + 10 + i, sy, x + 30 + i, sy + 70), fill=aw + (255,))
+            d.rectangle((x + 30 + i, sy, x + 50 + i, sy + 70), fill=(245, 240, 230, 255))
         sign = rnd.choice(SIGNS)
         tw = d.textlength(sign, font=sign_font)
         sx = x + (bw - tw) / 2
@@ -263,11 +263,17 @@ def main():
     bg = sky().convert("RGBA")
     far, mid, front = skyline_far(), towers_mid(), street_front()
     lamp, taxi = lamp_sprite(), taxi_sprite()
-    taxi_l = taxi_sprite(flip=True)
+    taxi_r = taxi_sprite(flip=True)
     vign = Image.new("L", (W, H), 0)
     ImageDraw.Draw(vign).ellipse((-300, -200, W + 300, H + 200), fill=255)
     vign = Image.composite(Image.new("RGBA", (W, H), (0, 0, 0, 0)), Image.new("RGBA", (W, H), (0, 0, 0, 120)),
                            vign.filter(ImageFilter.GaussianBlur(160)))
+
+    shade = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(shade)
+    for y in range(650):
+        sd.line([(0, y), (W, y)], fill=(10, 8, 25, int(170 * (1 - y / 650) ** 1.2)))
+    vign.alpha_composite(shade)
 
     tmp = tempfile.mkdtemp()
     silent = os.path.join(tmp, "v.mp4")
@@ -283,12 +289,15 @@ def main():
         img.alpha_composite(mid.crop((int(t * MID_SPEED), 0, int(t * MID_SPEED) + W, H)))
         img.alpha_composite(front.crop((int(t * STREET_SPEED), 0, int(t * STREET_SPEED) + W, H)))
         ground(img, t)
-        draw_walker(img, t)
+        wl = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        draw_walker(wl, t)
+        wl = wl.crop((250, 950, 850, 1610)).resize((300, 330), Image.LANCZOS)
+        img.alpha_composite(wl, (520 - 135, 1575 - 312))
         for k in range(-1, 4):  # street lamps on the curb
             lx = k * 700 - (t * STREET_SPEED) % 700 + 350
             img.alpha_composite(lamp, (int(lx), CURB_Y - 740))
-        for start, lane_y, speed, spr in ((0.5, 1600, -650, taxi_l), (4.0, 1600, -650, taxi_l), (8.5, 1600, -650, taxi_l),
-                                          (2.0, 1700, 260, taxi), (9.0, 1700, 260, taxi)):
+        for start, lane_y, speed, spr in ((0.5, 1600, -650, taxi), (4.0, 1600, -650, taxi), (8.5, 1600, -650, taxi),
+                                          (2.0, 1700, 260, taxi_r), (9.0, 1700, 260, taxi_r)):
             if speed < 0:
                 x = W + 50 + (t - start) * (speed - STREET_SPEED)
             else:
