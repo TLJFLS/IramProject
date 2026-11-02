@@ -69,6 +69,13 @@ Champs d'une scène (tous optionnels sauf au moins un texte) :
 
 ## Règles
 
+- **Zones de sécurité TikTok / Reels / Shorts (9:16, 1080×1920)** : l'interface de l'appli recouvre
+  le haut (~220 px), le bas (~450 px : description, pseudo) et la droite (~140 px : boutons like/partage),
+  et les téléphones rognent un peu les côtés. Garde tout texte important entre y = 250 et y = 1450,
+  et dans une largeur de ~800 px centrée. Les sous-titres se placent vers y ≈ 1300, jamais en bas.
+- **Sous-titres** : 3–4 mots à la fois, gros (≈ 84 px), gras, blancs avec contour noir ; le mot en cours
+  sur une pastille jaune avec un petit rebond (voir `subtitles()` dans `videos/prof-espace.py`).
+
 - Les emojis s'affichent en couleur partout (police `fonts/NotoColorEmoji.ttf`, licence OFL). Utilise-les avec modération : 1 par scène max dans le texte, ou un seul gros dans `emoji_text`.
 - Prévois ~1 s de lecture par 3 mots dans `duration`.
 - Nécessite `python3`, `Pillow` (`pip install pillow`) et `ffmpeg`.

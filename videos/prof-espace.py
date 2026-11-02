@@ -144,8 +144,9 @@ def classroom():
     d.rectangle((300, BY1 + 14, 360, BY1 + 26), fill=(250, 250, 245, 255))
     d.rectangle((420, BY1 + 16, 460, BY1 + 26), fill=(255, 200, 200, 255))
     # title above board
-    R.draw_text(im, d, ((W - R.text_len(d, "3 FAITS FOUS SUR L'ESPACE 🚀", R.font("bold", 64))) / 2, 120),
-                "3 FAITS FOUS SUR L'ESPACE 🚀", R.font("bold", 64), (60, 40, 30, 255), shadow=False)
+    tf = R.font("bold", 52)
+    title = "3 FAITS FOUS SUR L'ESPACE 🚀"
+    R.draw_text(im, d, ((W - R.text_len(d, title, tf)) / 2, 160), title, tf, (60, 40, 30, 255), shadow=False)
     # bookshelf left
     d.rectangle((50, 1080, 330, 1440), fill=(110, 72, 42, 255))
     for sy in (1080, 1200, 1320):
@@ -323,6 +324,10 @@ def clock_hands(img, t):
     d.line([c, (c[0], c[1] - 38)], fill=(40, 40, 40), width=5)
 
 
+SUB_Y = 1330  # centre des sous-titres : hors de la zone recouverte par l'interface TikTok
+SUB_GROUP = 4  # mots affichés à la fois
+
+
 def subtitles(img, t):
     talk = speaking(t)
     if not talk:
@@ -331,35 +336,59 @@ def subtitles(img, t):
     words = txt.split()
     per = (e - s) / len(words)
     cur = min(len(words) - 1, int((t - s) / per))
-    f = R.font("bold", 60)
-    d = ImageDraw.Draw(img)
-    space = d.textlength(" ", font=f)
+    g0 = (cur // SUB_GROUP) * SUB_GROUP
+    group = list(range(g0, min(len(words), g0 + SUB_GROUP)))
+    base = R.font("bold", 84)
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    space = d.textlength(" ", font=base)
+    # mise en page sur 1 ou 2 lignes, largeur max 800 px (marges de sécurité)
     lines, line, lw = [], [], 0
-    for i, w in enumerate(words):
-        wl = R.text_len(d, w, f)
-        if line and lw + space + wl > 900:
+    for i in group:
+        wl = R.text_len(d, words[i], base)
+        if line and lw + space + wl > 800:
             lines.append((line, lw))
             line, lw = [], 0
         lw += (space if line else 0) + wl
-        line.append((i, w, wl))
+        line.append((i, wl))
     lines.append((line, lw))
-    lh = 78
-    box_h = len(lines) * lh + 40
-    y0 = 1720 - box_h // 2
-    maxw = max(l for _, l in lines)
-    pop = R.ease((t - s) / 0.15)
-    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    ld = ImageDraw.Draw(layer)
-    ld.rounded_rectangle(((W - maxw) / 2 - 30, y0, (W + maxw) / 2 + 30, y0 + box_h), 28, fill=(10, 10, 20, int(185 * pop)))
-    y = y0 + 20
+    lh = 108
+    y = SUB_Y - len(lines) * lh / 2
     for line, lw in lines:
         x = (W - lw) / 2
-        for i, w, wl in line:
-            col = (255, 214, 60, 255) if i == cur else (255, 255, 255, 255) if i < cur else (255, 255, 255, 170)
-            R.draw_text(layer, ld, (x, y), w, f, col)
+        for i, wl in line:
+            w = words[i]
+            if i == cur:  # mot actif : pastille jaune + petit rebond
+                k = (t - s - i * per) / 0.12
+                sc = 1.0 + 0.12 * math.sin(min(1.0, max(0.0, k)) * math.pi)
+                f = R.font("bold", int(84 * sc))
+                ww = R.text_len(d, w, f)
+                cx = x + wl / 2
+                d.rounded_rectangle((cx - ww / 2 - 16, y - 6 - (sc - 1) * 40, cx + ww / 2 + 16, y + f.size * 1.15),
+                                    22, fill=(255, 205, 40, 255))
+                draw_word(layer, d, (cx - ww / 2, y - (sc - 1) * 40), w, f, (20, 20, 30, 255), stroke=0)
+            else:
+                draw_word(layer, d, (x, y), w, base, (255, 255, 255, 255), stroke=7)
             x += wl + space
         y += lh
+    soft = layer.getchannel("A").filter(ImageFilter.GaussianBlur(10)).point(lambda v: v * 0.55)
+    shadow = Image.new("RGBA", img.size, (0, 0, 0, 255))
+    shadow.putalpha(soft)
+    img.alpha_composite(shadow, (0, 8))
     img.alpha_composite(layer)
+
+
+def draw_word(layer, d, xy, word, f, fill, stroke):
+    x, y = xy
+    for is_e, chunk in R.runs(word):
+        if is_e:
+            em = R.emoji_img(chunk, int(f.size * 0.95))
+            if em is not None:
+                layer.alpha_composite(em, (int(x), int(y + f.size * 0.12)))
+                x += em.width + f.size * 0.05
+        else:
+            d.text((x, y), chunk, font=f, fill=fill, stroke_width=stroke, stroke_fill=(15, 15, 25, 255))
+            x += d.textlength(chunk, font=f)
 
 
 def main():
