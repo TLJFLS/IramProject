@@ -1,0 +1,20 @@
+{
+  "slug": "trahison",
+  "title": "LA TRAHISON 💔 épisode 1",
+  "cast": [
+    {"name": "fraise", "fruit": "fraise", "label": "Fraise"},
+    {"name": "banane", "fruit": "banane", "label": "Banane"},
+    {"name": "kiwi", "fruit": "kiwi", "label": "Kiwi"}
+  ],
+  "lines": [
+    {"who": "fraise", "say": "Banane… c'est quoi ce message de Kiwi sur ton téléphone ?", "emotion": "colere", "shot": "close"},
+    {"who": "banane", "say": "Quoi ? Mais… c'est rien, c'est une erreur !", "emotion": "choc"},
+    {"who": "fraise", "say": "Une erreur ? Il t'appelle « mon petit dessert » !", "emotion": "colere"},
+    {"who": "kiwi", "say": "Bon… je crois qu'il faut que je vous dise un truc.", "emotion": "malin", "shot": "wide"},
+    {"who": "kiwi", "say": "Ça fait trois mois qu'on se voit en cachette dans le frigo.", "emotion": "malin"},
+    {"who": "fraise", "say": "Trois mois ?! Dans MON frigo ?!", "emotion": "choc"},
+    {"who": "banane", "say": "Fraise, attends, je peux tout t'expliquer…", "emotion": "triste"},
+    {"who": "fraise", "say": "Va expliquer ça au mixeur. C'est fini entre nous.", "emotion": "colere"}
+  ],
+  "caption": "💔 La banane a trompé la fraise… avec le KIWI 😱\n\nLa suite demain ? Dis-moi en commentaire qui a raison 👇\n🍓 Team Fraise ou 🥝 Team Kiwi ?\n\n#fruits #drama #fruitdrama #fraise #banane #kiwi #humour #fyp #pourtoi"
+}
