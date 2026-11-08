@@ -13,8 +13,9 @@ python3 .claude/skills/softness/scripts/softness.py --game tube --color rouge --
 ```
 
 Options :
-- `--game` : `scies` (4 scies au-dessus d'un socle troué) ou `tube` (tube en verre plus étroit que la capsule :
-  0 % reste bloquée dessus, plus c'est mou plus elle s'enfonce, 100 % traverse tout).
+- `--game` : `scies` (4 scies au-dessus d'un socle troué), `tube` (tube en verre plus étroit que la capsule :
+  0 % reste bloquée dessus, plus c'est mou plus elle s'enfonce, 100 % traverse tout) ou `grille`
+  (grille de barreaux avec petite ouverture carrée au centre, même comportement que les scies, sans rotation).
   **Alterner les jeux** d'une vidéo à l'autre pour varier le contenu.
 - `--color` : `bleu` (défaut), `rouge`, `vert`, `jaune`, `rose`, `violet`, `orange` → varier pour faire une série.
 - `--steps` : paliers en %, défaut **`0,20,50,75,100`** (choix de l'utilisateur : ~14 s de vidéo, ~30 min de rendu).

@@ -22,7 +22,7 @@ R0, HC = 0.45, 2.6          # rayon, hauteur
 PLANE = 1.26                # dessus des scies (ou haut du tube)
 GAP = 0.2                   # rayon du passage entre les 4 scies (ou rayon intérieur du tube)
 HOLE = 0.56                 # rayon du trou du socle
-GAME = "scies"              # "scies" ou "tube"
+GAME = "scies"              # "scies", "tube" ou "grille"
 TUBE_IN, TUBE_TOP = 0.3, 1.9
 
 
@@ -314,15 +314,29 @@ def build_scene(color, res, samples):
         bpy.context.object.data.materials.append(gold)
         bpy.ops.mesh.primitive_torus_add(major_radius=TUBE_IN + 0.08, minor_radius=0.04, location=(0, 0, 0.02))
         bpy.context.object.data.materials.append(gold)
+    if GAME == "grille":  # grille de barreaux, ouverture carrée au centre
+        steel = mat("acier", (0.85, 0.85, 0.9), 0.18, 1.0)
+        for i, c in enumerate([-1.0, -0.62, -GAP - 0.05, GAP + 0.05, 0.62, 1.0]):
+            for axis in (0, 1):
+                z = PLANE - 0.05 - (0.1 if axis else 0.0)
+                loc = (c, 0, z) if axis == 0 else (0, c, z)
+                rot = (math.pi / 2, 0, 0) if axis == 0 else (0, math.pi / 2, 0)
+                bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.05, depth=2.4, location=loc, rotation=rot)
+                bpy.context.object.data.materials.append(steel)
+                bpy.ops.object.shade_smooth()
+        for c in (-1.2, 1.2):  # cadre doré
+            for axis in (0, 1):
+                loc = (c, 0, PLANE - 0.1) if axis == 0 else (0, c, PLANE - 0.1)
+                rot = (math.pi / 2, 0, 0) if axis == 0 else (0, math.pi / 2, 0)
+                bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.07, depth=2.54, location=loc, rotation=rot)
+                bpy.context.object.data.materials.append(gold)
     # 4 scies
-    for k in (range(0) if GAME == "tube" else [0]):
-        pass
     Rb = 0.95
     dpos = (Rb + GAP) / math.sqrt(2)
     teeth = 12
     bm = bmesh.new()
     pts = []
-    if GAME == "tube":
+    if GAME in ("tube", "grille"):
         teeth = 0
     step = 2 * math.pi / max(teeth, 1)
     for k in range(teeth):
@@ -339,7 +353,7 @@ def build_scene(color, res, samples):
     blade_mesh = bpy.data.meshes.new("scie")
     bm.to_mesh(blade_mesh)
     bm.free()
-    for k, (sx, sy) in enumerate([] if GAME == "tube" else [(1, 1), (-1, 1), (-1, -1), (1, -1)]):
+    for k, (sx, sy) in enumerate([] if GAME in ("tube", "grille") else [(1, 1), (-1, 1), (-1, -1), (1, -1)]):
         o = bpy.data.objects.new(f"scie{k}", blade_mesh)
         sc.collection.objects.link(o)
         o.location = (sx * dpos, sy * dpos, PLANE - 0.04 - (0.045 if k % 2 else 0.0))
@@ -461,7 +475,7 @@ def soundtrack(steps, seconds, sr=44100):
     hum = 0.05 * (np.sin(2 * np.pi * 190 * t) + 0.5 * np.sin(2 * np.pi * 380 * t + 1) + 0.25 * np.sin(2 * np.pi * 760 * t))
     hum *= 0.8 + 0.2 * np.sin(2 * np.pi * 3 * t)
     whir = np.convolve(noise, np.ones(8) / 8, mode="same") * 0.03
-    out = hum + whir if GAME != "tube" else whir * 0.3
+    out = hum + whir if GAME == "scies" else whir * 0.3
     t_hit = math.sqrt(2 * 1.25 / 9.8)
     for i, s in enumerate(steps):
         base = i * seconds
@@ -474,7 +488,7 @@ def soundtrack(steps, seconds, sr=44100):
                 + noise[:L] * np.exp(-tt * 60) * 0.15)
         seg = out[k0:k0 + L]
         seg += thud[:len(seg)]
-        if s < 0.25 and GAME != "tube":  # grincement métal sur métal
+        if s < 0.25 and GAME == "scies":  # grincement métal sur métal
             k1 = int((base + t_hit + 0.6) * sr)
             L2 = int((seconds - t_hit - 0.7) * sr)
             tt2 = np.arange(L2) / sr
@@ -505,7 +519,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="videos/softness/softness.mp4")
     ap.add_argument("--steps", default="0,20,50,75,100")
-    ap.add_argument("--game", default="scies", choices=["scies", "tube"])
+    ap.add_argument("--game", default="scies", choices=["scies", "tube", "grille"])
     ap.add_argument("--color", default="bleu")
     ap.add_argument("--fps", type=int, default=24)
     ap.add_argument("--seconds", type=float, default=2.8)
