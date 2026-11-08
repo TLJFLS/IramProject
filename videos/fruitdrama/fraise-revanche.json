@@ -1,0 +1,58 @@
+{
+ "slug": "fraise-revanche",
+ "title": "10 ANS PLUS TARD… 🍓",
+ "cast": {
+  "fraise": {
+   "voice": "fr-FR-DeniseNeural",
+   "pitch": "+20Hz",
+   "color": [
+    255,
+    77,
+    109
+   ],
+   "label": "Fraise",
+   "emoji": "🍓"
+  },
+  "citron": {
+   "voice": "fr-CA-AntoineNeural",
+   "pitch": "+5Hz",
+   "color": [
+    247,
+    231,
+    51
+   ],
+   "label": "Citron",
+   "emoji": "🍋"
+  }
+ },
+ "scenes": [
+  {
+   "image": "In a high school courtyard, a small shy girl with a strawberry head and a school backpack is mocked by a tall arrogant boy with a lemon head and his laughing friends with fruit heads.",
+   "lines": [
+    {
+     "who": "citron",
+     "say": "T'es trop petite, la Fraise ! Tu feras jamais rien de ta vie !"
+    }
+   ]
+  },
+  {
+   "image": "Ten years later, the strawberry-head woman, confident, in an elegant business suit, sits as CEO behind a big desk in a luxury glass office with a city skyline; the lemon-head man enters nervously for a job interview holding his CV.",
+   "lines": [
+    {
+     "who": "narrateur",
+     "say": "Dix ans plus tard, le Citron passe un entretien d'embauche."
+    }
+   ]
+  },
+  {
+   "image": "Close-up: the lemon-head man recognizes the strawberry-head CEO and freezes, sweating, shocked; she smiles calmly, holding his CV.",
+   "lines": [
+    {
+     "who": "fraise",
+     "say": "Alors… je suis toujours trop petite ?"
+    }
+   ]
+  }
+ ],
+ "caption": "🍓 Il se moquait d'elle au lycée… 10 ans plus tard, c'est ELLE la patronne 😳\n\nTu l'embauches ou pas ? 👇\nPartie 2 ?\n\n#revanche #fruitdrama #fruits #drama #histoire #humour #ia #fyp #pourtoi"
+}

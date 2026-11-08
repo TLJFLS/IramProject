@@ -1,0 +1,67 @@
+{
+ "slug": "mine",
+ "title": "LA MINE D'OR ⛏️",
+ "cast": {
+  "grenade": {
+   "voice": "fr-CA-ThierryNeural",
+   "pitch": "-5Hz",
+   "color": [
+    200,
+    30,
+    50
+   ],
+   "label": "Grenade",
+   "emoji": "🔴"
+  },
+  "banane": {
+   "voice": "fr-FR-RemyMultilingualNeural",
+   "pitch": "+15Hz",
+   "color": [
+    255,
+    220,
+    60
+   ],
+   "label": "Banane",
+   "emoji": "🍌"
+  }
+ },
+ "scenes": [
+  {
+   "image": "In a dark gold mine tunnel lit by lanterns, a greedy boss with a giant pomegranate head in a black suit hands a thin envelope labeled PAIEMENT to a smiling miner with a banana head in blue overalls and a helmet with headlamp; other banana miners wait in line; stacks of cash on a wooden table.",
+   "lines": [
+    {
+     "who": "narrateur",
+     "say": "Le patron Grenade payait ses mineurs une misère."
+    }
+   ]
+  },
+  {
+   "image": "Deep in the mine, the banana-head miner holds up a gigantic shining gold nugget, his headlamp lighting it, other banana miners gasp in amazement.",
+   "lines": [
+    {
+     "who": "banane",
+     "say": "Les gars… c'est la plus grosse pépite du monde !"
+    }
+   ]
+  },
+  {
+   "image": "The pomegranate-head boss in a suit storms in and grabs the gold nugget from the banana miner, evil grin.",
+   "lines": [
+    {
+     "who": "grenade",
+     "say": "Donne-moi ça. Tout ce qui est dans ma mine m'appartient."
+    }
+   ]
+  },
+  {
+   "image": "All the banana-head miners surround the shocked pomegranate-head boss, arms crossed, headlamps pointed at him, the first banana miner holding the gold nugget back, heroic low angle.",
+   "lines": [
+    {
+     "who": "banane",
+     "say": "Non. Cette fois, c'est nous les patrons."
+    }
+   ]
+  }
+ ],
+ "caption": "⛏️ Le patron voulait voler la pépite… les mineurs ont dit NON 🔥\n\nTeam Banane ou Team Grenade ? 👇\nPartie 2 ?\n\n#mine #or #fruitdrama #fruits #drama #histoire #humour #ia #fyp #pourtoi"
+}

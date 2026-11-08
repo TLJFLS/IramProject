@@ -1,0 +1,86 @@
+{
+ "slug": "prison",
+ "title": "LA PASTÈQUE EN PRISON 🍉",
+ "cast": {
+  "pasteque": {
+   "voice": "fr-FR-HenriNeural",
+   "pitch": "-20Hz",
+   "color": [
+    120,
+    200,
+    90
+   ],
+   "label": "Pastèque",
+   "emoji": "🍉"
+  },
+  "pomme": {
+   "voice": "fr-FR-EloiseNeural",
+   "pitch": "+5Hz",
+   "color": [
+    235,
+    70,
+    70
+   ],
+   "label": "Pomme",
+   "emoji": "🍎"
+  },
+  "ananas": {
+   "voice": "fr-BE-GerardNeural",
+   "pitch": "-5Hz",
+   "color": [
+    250,
+    200,
+    40
+   ],
+   "label": "Ananas",
+   "emoji": "🍍"
+  }
+ },
+ "scenes": [
+  {
+   "image": "A huge muscular prisoner with a giant watermelon head and an angry face, in a striped prison uniform, walks toward the camera in a prison cafeteria; prisoners with fruit heads (orange, pear, pineapple, apple) watch, guards on the balcony.",
+   "lines": [
+    {
+     "who": "narrateur",
+     "say": "Dans cette prison, tout le monde a peur de la Pastèque."
+    }
+   ]
+  },
+  {
+   "image": "In the prison cafeteria, the giant watermelon-head prisoner grabs the food tray of a small, scared prisoner with a red apple head; close-up on both, dramatic tension.",
+   "lines": [
+    {
+     "who": "pomme",
+     "say": "Hé ! C'est mon repas !"
+    },
+    {
+     "who": "pasteque",
+     "say": "Plus maintenant, petite compote."
+    }
+   ]
+  },
+  {
+   "image": "An old, calm but tough prisoner with a pineapple head and a grey beard stands up from his table and points at the watermelon-head prisoner, the whole cafeteria goes silent.",
+   "lines": [
+    {
+     "who": "ananas",
+     "say": "Rends-lui son plateau. Tout de suite."
+    }
+   ]
+  },
+  {
+   "image": "Wide shot: dozens of fruit-head prisoners all stand up together behind the pineapple and the apple, facing the watermelon-head prisoner who looks suddenly nervous and sweating.",
+   "lines": [
+    {
+     "who": "narrateur",
+     "say": "Ce jour-là, la Pastèque a compris qu'on ne touche pas aux plus petits."
+    },
+    {
+     "who": "pasteque",
+     "say": "Euh… bon appétit les gars."
+    }
+   ]
+  }
+ ],
+ "caption": "🍉 Le caïd de la prison s'en prend au plus petit… mauvaise idée 😳\n\nTu aurais fait quoi à la place de l'Ananas ? 👇\nPartie 2 ?\n\n#prison #fruitdrama #fruits #drama #histoire #humour #ia #fyp #pourtoi"
+}

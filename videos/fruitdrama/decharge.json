@@ -1,0 +1,71 @@
+{
+ "slug": "decharge",
+ "title": "DE LA DÉCHARGE À LA FORTUNE 💰",
+ "cast": {
+  "mangue": {
+   "voice": "fr-FR-HenriNeural",
+   "pitch": "+0Hz",
+   "color": [
+    255,
+    170,
+    40
+   ],
+   "label": "Mangue",
+   "emoji": "🥭"
+  },
+  "cerise": {
+   "voice": "fr-FR-DeniseNeural",
+   "pitch": "+15Hz",
+   "color": [
+    220,
+    30,
+    60
+   ],
+   "label": "Cerise",
+   "emoji": "🍒"
+  }
+ },
+ "scenes": [
+  {
+   "image": "A poor tired man with a giant mango head, ragged plaid shirt, carrying a wicker basket of plastic bottles, and a poor woman with a giant cherry head in a torn dress, searching a huge garbage dump, dusty sunlight.",
+   "lines": [
+    {
+     "who": "narrateur",
+     "say": "La Mangue et la Cerise vivaient de ce qu'elles trouvaient à la décharge."
+    }
+   ]
+  },
+  {
+   "image": "The mango-head man kneels in the garbage and holds up a crumpled lottery ticket, amazed; the cherry-head woman leans over his shoulder, surprised.",
+   "lines": [
+    {
+     "who": "mangue",
+     "say": "Cerise… regarde ce que j'ai trouvé dans les poubelles !"
+    }
+   ]
+  },
+  {
+   "image": "The mango-head man and the cherry-head woman, now in elegant clothes, scream with joy in front of a TV showing the winning lottery numbers and a huge jackpot, money flying, luxury villa living room.",
+   "lines": [
+    {
+     "who": "narrateur",
+     "say": "C'était le ticket gagnant. Le gros lot !"
+    },
+    {
+     "who": "cerise",
+     "say": "On est riches !"
+    }
+   ]
+  },
+  {
+   "image": "The rich mango-head man in a luxury suit and the cherry-head woman in a gown stand at the gate of their mansion, while snobbish fruit-head neighbors (lemon, grape) who used to mock them come begging with fake smiles.",
+   "lines": [
+    {
+     "who": "mangue",
+     "say": "Tiens, vous vous souvenez de nous maintenant ?"
+    }
+   ]
+  }
+ ],
+ "caption": "💰 Ils vivaient dans une décharge… jusqu'à ce ticket 🎟️\n\nEt toi, tu aiderais ceux qui se moquaient de toi ? 👇\nPartie 2 ?\n\n#richesse #fruitdrama #fruits #drama #histoire #humour #ia #fyp #pourtoi"
+}

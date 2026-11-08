@@ -1,0 +1,78 @@
+{
+ "slug": "restaurant",
+ "title": "IL L'A JUGÉ SUR SES HABITS 👀",
+ "cast": {
+  "coco": {
+   "voice": "fr-FR-HenriNeural",
+   "pitch": "-5Hz",
+   "color": [
+    170,
+    120,
+    80
+   ],
+   "label": "Coco",
+   "emoji": "🥥"
+  },
+  "raisin": {
+   "voice": "fr-CH-FabriceNeural",
+   "pitch": "+10Hz",
+   "color": [
+    150,
+    80,
+    190
+   ],
+   "label": "Raisin",
+   "emoji": "🍇"
+  },
+  "ananas": {
+   "voice": "fr-BE-GerardNeural",
+   "pitch": "+0Hz",
+   "color": [
+    250,
+    200,
+    40
+   ],
+   "label": "Ananas",
+   "emoji": "🍍"
+  }
+ },
+ "scenes": [
+  {
+   "image": "In a luxurious golden restaurant, an arrogant waiter with a bunch-of-grapes head in a black tuxedo blocks the way of a calm man with a coconut head wearing old worn clothes, rich fruit-head customers laughing in the background.",
+   "lines": [
+    {
+     "who": "raisin",
+     "say": "Désolé, ici c'est pas pour les fruits comme toi."
+    }
+   ]
+  },
+  {
+   "image": "The coconut-head man in worn clothes calmly takes out his phone and makes a call, slight smile, the grape-head waiter laughing at him.",
+   "lines": [
+    {
+     "who": "coco",
+     "say": "Allô ? Oui, c'est moi. Tu peux descendre une minute ?"
+    }
+   ]
+  },
+  {
+   "image": "The restaurant owner with a pineapple head in an expensive suit runs in panicked and bows deeply in front of the coconut-head man, the grape-head waiter frozen in shock.",
+   "lines": [
+    {
+     "who": "ananas",
+     "say": "Monsieur Coco ! Le propriétaire de tout l'immeuble ! Pardon pour l'accueil !"
+    }
+   ]
+  },
+  {
+   "image": "The coconut-head man hands a dirty kitchen apron to the shocked grape-head waiter, the pineapple-head owner nodding behind, customers watching.",
+   "lines": [
+    {
+     "who": "coco",
+     "say": "À partir de demain, c'est toi qui fais la plonge."
+    }
+   ]
+  }
+ ],
+ "caption": "👀 Le serveur l'a jugé sur ses habits… il ne savait pas QUI il était 😳\n\nIl mérite la plonge ou pas ? 👇\nPartie 2 ?\n\n#karma #fruitdrama #fruits #drama #histoire #humour #ia #fyp #pourtoi"
+}
