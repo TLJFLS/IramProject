@@ -19,9 +19,18 @@ COLORS = {"bleu": (0.08, 0.35, 0.95), "rouge": (0.9, 0.05, 0.08), "vert": (0.1, 
 
 # ---------- géométrie de la capsule et loi de déformation ----------
 R0, HC = 0.45, 2.6          # rayon, hauteur
-PLANE = 1.26                # dessus des scies
-GAP = 0.2                   # rayon du passage entre les 4 scies
+PLANE = 1.26                # dessus des scies (ou haut du tube)
+GAP = 0.2                   # rayon du passage entre les 4 scies (ou rayon intérieur du tube)
 HOLE = 0.56                 # rayon du trou du socle
+GAME = "scies"              # "scies" ou "tube"
+TUBE_IN, TUBE_TOP = 0.3, 1.9
+
+
+def set_game(game):
+    global GAME, PLANE, GAP
+    GAME = game
+    if game == "tube":
+        PLANE, GAP = TUBE_TOP, TUBE_IN
 NT, NC, NB = 48, 12, 26     # segments autour, anneaux par demi-sphère, anneaux du corps
 
 
@@ -103,8 +112,9 @@ def state(s, t):
     st["a"] = a_eq * ease(tau / 0.08) + amp * math.exp(-5.5 * tau) * math.sin(w * tau)
     st["flat"] = min(0.17, max(0.0, st["a"]) * 0.45)
     # rebonds des capsules dures
-    if s < 0.25:
-        h1 = (0.25 - s) * 1.9
+    hard = 0.1 if GAME == "tube" else 0.25
+    if s < hard:
+        h1 = (hard - s) * 1.9
         e = 0.42
         tt, h = tau, h1
         while h > 0.004:
@@ -124,6 +134,23 @@ def state(s, t):
             st["jy"] = 0.010 * math.sin(61 * tau + 2)
         return st
     st["free"] = False
+    if GAME == "tube":
+        pts = [(0.1, 0.0), (0.2, 0.04), (0.5, 0.15), (0.75, 0.32), (0.95, 0.6)]
+        fmax = 1.0 if s >= 0.95 else float(np.interp(s, [p[0] for p in pts], [p[1] for p in pts]))
+        x = max(0.0, tau - 0.12)
+        if fmax < 1.0:
+            rate = 0.25 + 0.9 * s
+            st["f"] = fmax * (1 - math.exp(-rate * x / max(fmax, 1e-3)))
+            st["jx"] = 0.004 * math.sin(41 * tau)
+        else:
+            rate = 0.9
+            st["f"] = min(1.0, (x * rate) ** 1.1)
+            done = 1.0 / rate + 0.12
+            if tau > done:
+                tp = tau - done
+                st["drop"] = 1.5 * tp + 0.5 * g * tp * tp
+        st["bl"] = 1.0
+        return st
     # passage entre les scies
     delay = 0.12
     if s < 0.55:
@@ -158,7 +185,7 @@ def deform(st):
         if Vu > 1e-6:
             Ru = min(Ru, 1.25 * (3 * Vu / (4 * math.pi)) ** (1 / 3))
         Hu = Vu / (math.pi * Ru ** 2 * KC) if Vu > 1e-9 else 0.0
-        Rl = min(R0 * st["bl"], HOLE * 0.9)
+        Rl = GAP if GAME == "tube" else min(R0 * st["bl"], HOLE * 0.9)
         if Vl > 1e-9:
             Rl = min(Rl, 1.1 * (3 * Vl / (4 * math.pi)) ** (1 / 3))
         Hl = Vl / (math.pi * Rl ** 2 * KC) if Vl > 1e-9 else 0.0
@@ -175,7 +202,7 @@ def deform(st):
             qc = st["flat"] if f < 0.02 else 0.0
             z[up] = PLANE + Hu * np.clip((q - qc) / (1 - qc), 0, None)
             rad[up] = Ru * shape(q)
-        if 0.0 < f < 1.0:  # col de pâte entre les scies
+        if 0.0 < f < 1.0 and GAME != "tube":  # col de pâte entre les scies
             rad = np.maximum(rad, GAP * np.exp(-((z - PLANE) / 0.12) ** 2))
             rad = np.where(np.abs(z - PLANE) < 0.05, np.minimum(rad, GAP), rad)
         z = z if Vl > 0 else z
@@ -259,28 +286,60 @@ def build_scene(color, res, samples):
     # intérieur du trou bien sombre
     bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=HOLE - 0.005, depth=0.01, location=(0, 0, -1.4))
     bpy.context.object.data.materials.append(mat("fond", (0.02, 0.01, 0.01), 0.9))
-    # 4 scies
     blades = []
+    if GAME == "tube":
+        glass = bpy.data.materials.new("verre")
+        glass.use_nodes = True
+        gb = glass.node_tree.nodes["Principled BSDF"]
+        gb.inputs["Base Color"].default_value = (0.9, 0.97, 1.0, 1)
+        gb.inputs["Roughness"].default_value = 0.02
+        gb.inputs["Alpha"].default_value = 0.22  # verre translucide : on voit la capsule dedans
+        gb.inputs["Coat Weight"].default_value = 1.0
+        bpy.ops.mesh.primitive_cylinder_add(vertices=64, radius=TUBE_IN + 0.06, depth=TUBE_TOP + 1.5,
+                                            location=(0, 0, (TUBE_TOP - 1.5) / 2))
+        tube = bpy.context.object
+        sol = tube.modifiers.new("epaisseur", "SOLIDIFY")
+        bpy.ops.mesh.primitive_cylinder_add(vertices=64, radius=TUBE_IN, depth=TUBE_TOP + 2, location=(0, 0, (TUBE_TOP - 1.5) / 2))
+        inner = bpy.context.object
+        mod = tube.modifiers.new("creux", "BOOLEAN")
+        mod.operation, mod.object = "DIFFERENCE", inner
+        bpy.context.view_layer.objects.active = tube
+        tube.modifiers.remove(sol)
+        bpy.ops.object.modifier_apply(modifier="creux")
+        bpy.data.objects.remove(inner)
+        bpy.ops.object.shade_smooth()
+        tube.data.materials.clear()
+        tube.data.materials.append(glass)
+        bpy.ops.mesh.primitive_torus_add(major_radius=TUBE_IN + 0.03, minor_radius=0.045, location=(0, 0, TUBE_TOP))
+        bpy.context.object.data.materials.append(gold)
+        bpy.ops.mesh.primitive_torus_add(major_radius=TUBE_IN + 0.08, minor_radius=0.04, location=(0, 0, 0.02))
+        bpy.context.object.data.materials.append(gold)
+    # 4 scies
+    for k in (range(0) if GAME == "tube" else [0]):
+        pass
     Rb = 0.95
     dpos = (Rb + GAP) / math.sqrt(2)
     teeth = 12
     bm = bmesh.new()
     pts = []
-    step = 2 * math.pi / teeth
+    if GAME == "tube":
+        teeth = 0
+    step = 2 * math.pi / max(teeth, 1)
     for k in range(teeth):
         a0 = k * step
         pts += [(Rb * math.cos(a0), Rb * math.sin(a0)),
                 (Rb * 0.84 * math.cos(a0 + 0.12 * step), Rb * 0.84 * math.sin(a0 + 0.12 * step)),
                 (Rb * 0.9 * math.cos(a0 + 0.6 * step), Rb * 0.9 * math.sin(a0 + 0.6 * step))]
-    vs = [bm.verts.new((x, y, 0)) for x, y in pts]
-    face = bm.faces.new(vs)
-    ext = bmesh.ops.extrude_face_region(bm, geom=[face])
-    for v in [e for e in ext["geom"] if isinstance(e, bmesh.types.BMVert)]:
-        v.co.z += 0.04
+    if pts:
+        vs = [bm.verts.new((x, y, 0)) for x, y in pts]
+        face = bm.faces.new(vs)
+        ext = bmesh.ops.extrude_face_region(bm, geom=[face])
+        for v in [e for e in ext["geom"] if isinstance(e, bmesh.types.BMVert)]:
+            v.co.z += 0.04
     blade_mesh = bpy.data.meshes.new("scie")
     bm.to_mesh(blade_mesh)
     bm.free()
-    for k, (sx, sy) in enumerate([(1, 1), (-1, 1), (-1, -1), (1, -1)]):
+    for k, (sx, sy) in enumerate([] if GAME == "tube" else [(1, 1), (-1, 1), (-1, -1), (1, -1)]):
         o = bpy.data.objects.new(f"scie{k}", blade_mesh)
         sc.collection.objects.link(o)
         o.location = (sx * dpos, sy * dpos, PLANE - 0.04 - (0.045 if k % 2 else 0.0))
@@ -319,7 +378,7 @@ def build_scene(color, res, samples):
     camo = bpy.context.object
     sc.camera = camo
     camo.data.lens = 40
-    target = Vector((0, 0, 1.45))
+    target = Vector((0, 0, 1.45 if GAME != "tube" else 1.75))
     camo.rotation_euler = (target - camo.location).to_track_quat("-Z", "Y").to_euler()
     sc.render.engine = "CYCLES"
     sc.cycles.device = "CPU"
@@ -328,7 +387,9 @@ def build_scene(color, res, samples):
     sc.cycles.max_bounces = 4
     sc.cycles.diffuse_bounces = 2
     sc.cycles.glossy_bounces = 3
-    sc.cycles.transmission_bounces = 0
+    sc.cycles.transmission_bounces = 6 if GAME == "tube" else 0
+    if GAME == "tube":
+        sc.cycles.max_bounces = 8
     sc.cycles.adaptive_threshold = 0.05
     sc.cycles.denoiser = "OPENIMAGEDENOISE"
     sc.cycles.caustics_reflective = sc.cycles.caustics_refractive = False
@@ -400,7 +461,7 @@ def soundtrack(steps, seconds, sr=44100):
     hum = 0.05 * (np.sin(2 * np.pi * 190 * t) + 0.5 * np.sin(2 * np.pi * 380 * t + 1) + 0.25 * np.sin(2 * np.pi * 760 * t))
     hum *= 0.8 + 0.2 * np.sin(2 * np.pi * 3 * t)
     whir = np.convolve(noise, np.ones(8) / 8, mode="same") * 0.03
-    out = hum + whir
+    out = hum + whir if GAME != "tube" else whir * 0.3
     t_hit = math.sqrt(2 * 1.25 / 9.8)
     for i, s in enumerate(steps):
         base = i * seconds
@@ -413,22 +474,24 @@ def soundtrack(steps, seconds, sr=44100):
                 + noise[:L] * np.exp(-tt * 60) * 0.15)
         seg = out[k0:k0 + L]
         seg += thud[:len(seg)]
-        if s < 0.25:  # grincement métal sur métal
+        if s < 0.25 and GAME != "tube":  # grincement métal sur métal
             k1 = int((base + t_hit + 0.6) * sr)
             L2 = int((seconds - t_hit - 0.7) * sr)
             tt2 = np.arange(L2) / sr
             grind = (noise[k1:k1 + L2] - np.convolve(noise[k1:k1 + L2], np.ones(4) / 4, mode="same")) * 0.12
             grind *= 0.6 + 0.4 * np.sin(2 * np.pi * 9 * tt2) ** 2
             out[k1:k1 + L2] += grind[:len(out[k1:k1 + L2])]
-        elif s >= 0.25:  # squish
+        elif s >= (0.1 if GAME == "tube" else 0.25):  # squish
             dur = 0.5 if s < 0.55 else max(0.25, 1.0 / (0.6 + 2.6 * (s - 0.55)))
+            if GAME == "tube":
+                dur = 1.1
             k1 = int((base + t_hit + 0.1) * sr)
             L2 = int(dur * sr)
             tt2 = np.arange(L2) / sr
             sq = np.convolve(noise[k1:k1 + L2], np.ones(24) / 24, mode="same") * 1.2
             sq *= np.sin(np.pi * tt2 / dur) * (0.6 + 0.4 * np.sin(2 * np.pi * 14 * tt2))
             out[k1:k1 + L2] += sq[:len(out[k1:k1 + L2])]
-            if s >= 0.55:  # plouf dans le trou
+            if s >= (0.95 if GAME == "tube" else 0.55):  # plouf dans le trou
                 k2 = k1 + L2 + int(0.25 * sr)
                 L3 = int(0.35 * sr)
                 tt3 = np.arange(L3) / sr
@@ -441,7 +504,8 @@ def soundtrack(steps, seconds, sr=44100):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="videos/softness/softness.mp4")
-    ap.add_argument("--steps", default="0,10,20,30,40,50,60,70,80,90,100")
+    ap.add_argument("--steps", default="0,20,50,75,100")
+    ap.add_argument("--game", default="scies", choices=["scies", "tube"])
     ap.add_argument("--color", default="bleu")
     ap.add_argument("--fps", type=int, default=24)
     ap.add_argument("--seconds", type=float, default=2.8)
@@ -450,6 +514,7 @@ def main():
     ap.add_argument("--test", action="store_true", help="rend 3 images de contrôle")
     a = ap.parse_args()
     res = tuple(int(v) for v in a.res.split("x"))
+    set_game(a.game)
     steps = [int(v) / 100 for v in a.steps.split(",")]
     color = COLORS.get(a.color, COLORS["bleu"])
     cap, blades = build_scene(color, res, a.samples)
@@ -459,12 +524,12 @@ def main():
         outdir = os.path.dirname(os.path.abspath(a.out))
         os.makedirs(outdir, exist_ok=True)
         import time
-        for s, t in [(0.0, 2.0), (0.4, 1.8), (1.0, 0.9)]:
+        for s, t in [(0.0, 2.0), (0.5, 2.2), (1.0, 1.2)]:
             p = os.path.join(tmp, "t.png")
             t0 = time.time()
             render_frame(cap, blades, s, t, t, p)
             print(f"  image {int(s * 100)} % : {time.time() - t0:.1f} s", flush=True)
-            overlay(Image.open(p), s).save(os.path.join(outdir, f"test_{int(s * 100)}.png"))
+            overlay(Image.open(p), s).save(os.path.join(outdir, f"test_{a.game}_{int(s * 100)}.png"))
         print("images de test :", outdir)
         return
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
