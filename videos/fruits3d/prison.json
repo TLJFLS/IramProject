@@ -1,0 +1,63 @@
+{
+ "slug": "prison",
+ "title": "LA PASTÈQUE EN PRISON 🍉",
+ "music": "epic",
+ "cast": [
+  {
+   "name": "pomme",
+   "fruit": "pomme",
+   "label": "Pomme"
+  },
+  {
+   "name": "pasteque",
+   "fruit": "pasteque",
+   "label": "Pastèque"
+  },
+  {
+   "name": "ananas",
+   "fruit": "ananas",
+   "label": "Ananas"
+  }
+ ],
+ "scenes": [
+  {
+   "background": "empty prison cafeteria interior, metal tables, cell blocks on two floors, fluorescent lights",
+   "lines": [
+    {
+     "who": "narrateur",
+     "say": "Dans cette prison, tout le monde a peur de la Pastèque."
+    },
+    {
+     "who": "pasteque",
+     "say": "Toi, la Pomme. Ton plateau, il est à moi maintenant.",
+     "emotion": "malin"
+    },
+    {
+     "who": "pomme",
+     "say": "Mais… c'est mon seul repas de la journée.",
+     "emotion": "triste"
+    },
+    {
+     "who": "pasteque",
+     "say": "T'as un problème, petite compote ?",
+     "emotion": "colere"
+    },
+    {
+     "who": "ananas",
+     "say": "Oui, elle a un problème. Et le problème, c'est moi.",
+     "emotion": "colere"
+    },
+    {
+     "who": "pasteque",
+     "say": "Euh… l'Ananas ? Je rigolais !",
+     "emotion": "choc"
+    },
+    {
+     "who": "narrateur",
+     "say": "Depuis ce jour, plus personne ne touche au plateau de la Pomme."
+    }
+   ]
+  }
+ ],
+ "caption": "🍉 Le caïd de la prison s'en prend au plus petit… mauvaise idée 😳\n\nTu aurais fait quoi à la place de l'Ananas ? 👇\nPartie 2 ?\n\n#prison #fruitdrama #fruits #drama #histoire #humour #3d #fyp #pourtoi"
+}

@@ -75,6 +75,80 @@ def tiles_material():
     return m
 
 
+def stripes_material():
+    m = bpy.data.materials.new("pasteque")
+    m.use_nodes = True
+    nt = m.node_tree
+    b = nt.nodes["Principled BSDF"]
+    b.inputs["Roughness"].default_value = 0.35
+    wave = nt.nodes.new("ShaderNodeTexWave")
+    wave.bands_direction = "X"
+    wave.inputs["Scale"].default_value = 2.2
+    wave.inputs["Distortion"].default_value = 5.0
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].color = (0.02, 0.18, 0.03, 1)
+    ramp.color_ramp.elements[1].color = (0.25, 0.55, 0.15, 1)
+    ramp.color_ramp.elements[0].position = 0.45
+    ramp.color_ramp.elements[1].position = 0.55
+    nt.links.new(wave.outputs["Fac"], ramp.inputs["Fac"])
+    nt.links.new(ramp.outputs["Color"], b.inputs["Base Color"])
+    return m
+
+
+def pineapple_material():
+    """Écailles dorées en losanges (Voronoi) avec bords bruns."""
+    m = bpy.data.materials.new("ananas")
+    m.use_nodes = True
+    nt = m.node_tree
+    b = nt.nodes["Principled BSDF"]
+    b.inputs["Roughness"].default_value = 0.55
+    vor = nt.nodes.new("ShaderNodeTexVoronoi")
+    vor.feature = "DISTANCE_TO_EDGE"
+    vor.inputs["Scale"].default_value = 7.0
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].color = (0.25, 0.12, 0.02, 1)
+    ramp.color_ramp.elements[1].color = (0.95, 0.62, 0.05, 1)
+    ramp.color_ramp.elements[1].position = 0.12
+    nt.links.new(vor.outputs["Distance"], ramp.inputs["Fac"])
+    nt.links.new(ramp.outputs["Color"], b.inputs["Base Color"])
+    bump = nt.nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.6
+    nt.links.new(vor.outputs["Distance"], bump.inputs["Height"])
+    nt.links.new(bump.outputs["Normal"], b.inputs["Normal"])
+    return m
+
+
+def add_accessory(kind, top, x=0.0):
+    """Accessoire posé sur la tête (coordonnées locales du fruit, avant mise en place)."""
+    def named(o):
+        o.name = "accessoire"
+        return o
+    if kind == "chapeau":  # haut-de-forme
+        black = material("chapeau", (0.02, 0.02, 0.02), 0.4)
+        named(cylinder("accessoire", 0.6, 0.05, black, (x, 0, top - 0.04)))
+        named(cylinder("accessoire", 0.4, 0.65, black, (x, 0, top + 0.28)))
+        named(cylinder("accessoire", 0.41, 0.1, material("ruban", (0.6, 0.02, 0.04), 0.5), (x, 0, top + 0.03)))
+    elif kind == "casque":  # casque de mineur avec lampe
+        yel = material("casque", (0.95, 0.55, 0.05), 0.35, coat=0.5)
+        named(sphere("accessoire", 48, 24, yel, (x, 0, top - 0.2), (0.72, 0.72, 0.5)))
+        named(cylinder("accessoire", 0.82, 0.04, yel, (x, 0, top - 0.22)))
+        named(cylinder("accessoire", 0.1, 0.12, material("lampe", (1.0, 0.95, 0.8), emission=12.0),
+                       (x, -0.68, top - 0.02), (math.pi / 2, 0, 0)))
+    elif kind == "couronne":
+        gold = material("or", (1.0, 0.7, 0.1), 0.2, coat=1.0)
+        named(cylinder("accessoire", 0.42, 0.18, gold, (x, 0, top)))
+        for k in range(6):
+            a = k / 6 * 2 * math.pi
+            bpy.ops.mesh.primitive_cone_add(vertices=8, radius1=0.09, depth=0.25,
+                                            location=(x + 0.38 * math.cos(a), 0.38 * math.sin(a), top + 0.2))
+            o = named(bpy.context.object)
+            o.data.materials.append(gold)
+    elif kind == "toque":  # toque de chef
+        white = material("toque", (0.95, 0.95, 0.95), 0.6)
+        named(cylinder("accessoire", 0.42, 0.4, white, (x, 0, top + 0.15)))
+        named(sphere("accessoire", 32, 16, white, (x, 0, top + 0.45), (0.55, 0.55, 0.3)))
+
+
 # ---------- géométrie ----------
 def sphere(name, seg=96, rings=48, mat=None, loc=(0, 0, 0), scale=(1, 1, 1)):
     bpy.ops.mesh.primitive_uv_sphere_add(segments=seg, ring_count=rings, radius=1, location=loc)
@@ -112,7 +186,7 @@ GREEN = None
 BROWN = None
 
 
-def make_fruit(kind, x):
+def make_fruit(kind, x, accessory=None):
     """Crée le corps du fruit centré en x, posé sur le plan (z = 0). Renvoie (corps, hauteur du visage)."""
     rnd = random.Random(hash(kind) % 1000)
     if kind == "orange":
@@ -176,10 +250,60 @@ def make_fruit(kind, x):
         deform(b, f)
         cylinder("tige", 0.07, 0.3, BROWN, (0.32, 0, 1.68))
         face_z, top = 0.1, 1.55
+    elif kind == "pasteque":
+        b = sphere("pasteque", mat=stripes_material())
+        deform(b, lambda v: Vector((v.x * 1.0, v.y * 0.95, v.z * 1.25)))
+        cylinder("tige", 0.05, 0.2, BROWN, (0, 0, 1.3))
+        face_z, top = 0.15, 1.25
+    elif kind == "ananas":
+        b = sphere("ananas", mat=pineapple_material())
+        deform(b, lambda v: Vector((v.x * 0.9, v.y * 0.88, v.z * 1.25)))
+        dark = material("feuille_ananas", (0.05, 0.35, 0.08), 0.5)
+        for k in range(16):
+            a = k / 16 * 2 * math.pi + (0.2 if k % 2 else 0)
+            tilt = 0.55 if k % 2 else 0.25
+            leaf("feuille", dark, (0.15 * math.cos(a), 0.15 * math.sin(a), 1.65),
+                 (tilt * math.sin(a), -tilt * math.cos(a), a), (0.11, 0.04, 0.6 if k % 2 else 0.75))
+        face_z, top = 0.1, 2.1
+    elif kind == "coco":
+        b = sphere("coco", mat=material("coco", (0.28, 0.16, 0.07), 0.95, 0.8, 90))
+        deform(b, lambda v: Vector((v.x * 0.95, v.y * 0.92, v.z * 1.08)))
+        face_z, top = 0.05, 1.08
+    elif kind == "cerise":
+        b = sphere("cerise", mat=material("cerise", (0.6, 0.0, 0.04), 0.15, 0.0, 10, coat=1.0))
+        def f(v):
+            d = math.exp(-(v.x ** 2 + v.y ** 2) / 0.05)
+            v = Vector((v.x * 1.05, v.y, v.z * 0.95))
+            v.z -= 0.18 * d if v.z > 0 else 0.0
+            return v
+        deform(b, f)
+        cylinder("tige", 0.035, 0.9, GREEN, (0.15, 0, 1.15), (0, 0.35, 0))
+        leaf("feuille", GREEN, (0.4, 0, 1.45), (0, -0.6, 0.3), (0.3, 0.12, 0.03))
+        face_z, top = 0.0, 0.8
+    elif kind == "mangue":
+        b = sphere("mangue", mat=material("mangue", (1.0, 0.55, 0.06), 0.4, 0.05, 15, sss=0.05))
+        deform(b, lambda v: Vector((v.x * 0.9 + 0.08 * v.z ** 2, v.y * 0.85, v.z * 1.18)))
+        cylinder("tige", 0.04, 0.2, BROWN, (0.08, 0, 1.22))
+        leaf("feuille", GREEN, (0.3, 0, 1.28), (0, -0.4, 0.3), (0.35, 0.13, 0.03))
+        face_z, top = 0.1, 1.18
+    elif kind == "grenade":
+        b = sphere("grenade", mat=material("grenade", (0.62, 0.04, 0.06), 0.35, 0.1, 25, coat=0.4))
+        deform(b, lambda v: Vector((v.x, v.y, v.z * 0.95)))
+        for k in range(6):
+            a = k / 6 * 2 * math.pi
+            bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.08, depth=0.25,
+                                            location=(0.12 * math.cos(a), 0.12 * math.sin(a), 1.02))
+            o = bpy.context.object
+            o.name = "tige"
+            o.rotation_euler = (0.4 * math.sin(a), -0.4 * math.cos(a), 0)
+            o.data.materials.append(b.data.materials[0])
+        face_z, top = 0.05, 1.1
     else:
         raise ValueError(f"fruit inconnu : {kind}")
+    if accessory:
+        add_accessory(accessory, top, 0.32 if kind == "banane" else 0.0)
     parts = [o for o in bpy.context.scene.objects if o.parent is None and o.get("char") is None and o is not b
-             and o.name.split(".")[0] in ("tige", "feuille", "graine", "sepale")]
+             and o.name.split(".")[0] in ("tige", "feuille", "graine", "sepale", "accessoire")]
     for p in parts:
         p.parent = b
         p["char"] = kind
@@ -228,7 +352,7 @@ def add_face(name, body, face_h):
     return c
 
 
-def build_scene(cast):
+def build_scene(cast, transparent=False):
     global GREEN, BROWN
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene
@@ -238,10 +362,21 @@ def build_scene(cast):
     n = len(cast)
     for i, ch in enumerate(cast):
         x = (i - (n - 1) / 2) * SPACING
-        body, face_h, top = make_fruit(ch["fruit"], x)
+        body, face_h, top = make_fruit(ch["fruit"], x, ch.get("accessory"))
         CHARS[ch["name"]] = add_face(ch["name"], body, face_h)
         CHARS[ch["name"]]["top"] = top
+    if transparent:  # décor fourni à part : sol invisible qui garde les ombres, fond transparent
+        bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 8, 0))
+        bpy.context.object.is_shadow_catcher = True
+        sc.render.film_transparent = True
+        sc.render.image_settings.color_mode = "RGBA"
     # cuisine
+    if not transparent:
+        build_kitchen()
+    light_and_camera(sc)
+
+
+def build_kitchen():
     bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 8, 0))
     bpy.context.object.data.materials.append(wood_material())
     bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 9, 0), rotation=(math.pi / 2, 0, 0))
@@ -252,7 +387,9 @@ def build_scene(cast):
     win.data.materials.append(material("fenetre", (1.0, 0.92, 0.8), emission=3.0))
     for k, (x, col) in enumerate([(5.5, (0.9, 0.5, 0.1)), (6.6, (0.3, 0.6, 0.15)), (-6.0, (0.85, 0.1, 0.1))]):
         sphere("deco", 32, 16, material(f"deco{k}", col, 0.4), (x, 4.5, 0.6), (0.6, 0.6, 0.6))
-    # lumières
+
+
+def light_and_camera(sc):
     bpy.ops.object.light_add(type="AREA", location=(-3, -6, 6))
     key = bpy.context.object
     key.data.energy, key.data.size = 1200, 5

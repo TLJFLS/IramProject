@@ -1,6 +1,6 @@
 ---
 name: fruits
-description: Crée des vidéos TikTok de fruits qui parlent en 3D (Blender), format feuilleton / drama (disputes, trahisons, rebondissements), avec une voix différente par fruit et des sous-titres. Utiliser quand l'utilisateur demande des fruits qui parlent, un fruit drama, un épisode de feuilleton de fruits, ou "N vidéos de fruits".
+description: Crée GRATUITEMENT des vidéos TikTok de fruits qui parlent en 3D (Blender) dans des décors (prison, décharge, mine, restaurant…) générés gratuitement, format feuilleton / fruit drama (karma, trahisons, rebondissements), narrateur + une voix par fruit, sous-titres. Utiliser pour toute demande de fruits qui parlent / fruit drama / "N vidéos de fruits" (c'est le choix par défaut : il ne dépense aucun crédit).
 ---
 
 # Fruits qui parlent (3D) : feuilleton TikTok
@@ -29,10 +29,26 @@ Tu écris le scénario et tu produis le MP4 + la description. Pas de questions.
 - Description : accroche + question qui divise (« Team Fraise ou Team Kiwi ? ») + « La suite demain ? » + hashtags
   (#fruits #drama #fruitdrama #humour #fyp #pourtoi + noms des fruits).
 
-## Format de l'épisode
+## Décors gratuits (format `scenes`, recommandé pour le fruit drama)
+
+```json
+{"slug": "prison", "title": "LA PASTÈQUE EN PRISON 🍉", "music": "epic",
+ "cast": [{"name": "pasteque", "fruit": "pasteque", "label": "Pastèque", "accessory": "chapeau"}],
+ "scenes": [{"background": "empty prison cafeteria interior, metal tables (EN ANGLAIS, sans personnage)",
+             "lines": [{"who": "narrateur", "say": "…"}, {"who": "pasteque", "say": "…", "emotion": "malin"}]}],
+ "caption": "…"}
+```
+- `background` : décor généré gratuitement (Pollinations, sans clé, qualité moyenne : décrire un lieu VIDE).
+  Les fruits 3D sont rendus sur fond transparent avec leurs ombres, puis posés sur le décor.
+- `narrateur` : voix off (plan large, personne ne bouge la bouche, pas d'étiquette).
+- `accessory` : `chapeau` (haut-de-forme), `casque` (mineur), `couronne`, `toque` (chef).
+- Exemples : `videos/fruits3d/*.json`. Hôte réseau : `image.pollinations.ai`.
+
+## Format de l'épisode (cuisine, sans décor)
 
 - `cast` : 2–3 personnages `{"name", "fruit", "label"}` ; options `voice`, `pitch`, `color`, `emoji`.
-  Fruits disponibles : `fraise`, `banane`, `kiwi`, `orange`, `pomme`, `citron` (voix et couleur par défaut pour chacun).
+  Fruits disponibles : `fraise`, `banane`, `kiwi`, `orange`, `pomme`, `citron`, `pasteque`, `ananas`, `coco`,
+  `cerise`, `mangue`, `grenade` (voix et couleur par défaut pour chacun).
 - `lines` : `{"who", "say", "emotion", "shot", "pause"}`.
   - `emotion` : `neutre`, `joie`, `colere`, `triste`, `choc`, `malin`.
   - `shot` : `close` (défaut, gros plan), `zoom` (très gros plan, automatique pour `choc`), `wide` (tout le monde).

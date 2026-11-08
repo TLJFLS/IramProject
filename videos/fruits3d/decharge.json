@@ -1,0 +1,73 @@
+{
+ "slug": "decharge",
+ "title": "DE LA DÉCHARGE À LA FORTUNE 💰",
+ "music": "epic",
+ "cast": [
+  {
+   "name": "cerise",
+   "fruit": "cerise",
+   "label": "Cerise"
+  },
+  {
+   "name": "mangue",
+   "fruit": "mangue",
+   "label": "Mangue"
+  },
+  {
+   "name": "citron",
+   "fruit": "citron",
+   "label": "Citron"
+  }
+ ],
+ "scenes": [
+  {
+   "background": "huge garbage dump, piles of trash and plastic bottles, dusty sunlight",
+   "lines": [
+    {
+     "who": "narrateur",
+     "say": "La Mangue et la Cerise vivaient de ce qu'elles trouvaient à la décharge."
+    },
+    {
+     "who": "mangue",
+     "say": "Cerise ! Regarde ce ticket de loto dans la poubelle !",
+     "emotion": "choc"
+    },
+    {
+     "who": "cerise",
+     "say": "Laisse tomber, ils sont toujours perdants…",
+     "emotion": "neutre"
+    }
+   ]
+  },
+  {
+   "background": "luxurious modern villa living room, golden lights, big windows, money on the floor",
+   "lines": [
+    {
+     "who": "narrateur",
+     "say": "Le soir même… c'était le ticket gagnant."
+    },
+    {
+     "who": "cerise",
+     "say": "On est riches ! On est riches !",
+     "emotion": "joie"
+    }
+   ]
+  },
+  {
+   "background": "gate of a huge luxury mansion with a fountain, sunset",
+   "lines": [
+    {
+     "who": "citron",
+     "say": "Salut les amis ! Vous pourriez nous prêter un peu d'argent ?",
+     "emotion": "malin"
+    },
+    {
+     "who": "mangue",
+     "say": "Tiens… maintenant on est tes amis ?",
+     "emotion": "malin"
+    }
+   ]
+  }
+ ],
+ "caption": "💰 Ils vivaient dans une décharge… jusqu'à ce ticket 🎟️\n\nEt toi, tu aiderais ceux qui se moquaient de toi ? 👇\nPartie 2 ?\n\n#richesse #fruitdrama #fruits #drama #histoire #humour #3d #fyp #pourtoi"
+}

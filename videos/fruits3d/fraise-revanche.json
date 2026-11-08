@@ -1,0 +1,59 @@
+{
+ "slug": "fraise-revanche",
+ "title": "10 ANS PLUS TARD… 🍓",
+ "music": "epic",
+ "cast": [
+  {
+   "name": "fraise",
+   "fruit": "fraise",
+   "label": "Fraise"
+  },
+  {
+   "name": "kiwi",
+   "fruit": "kiwi",
+   "label": "Kiwi"
+  }
+ ],
+ "scenes": [
+  {
+   "background": "high school courtyard with lockers and trees, daytime",
+   "lines": [
+    {
+     "who": "kiwi",
+     "say": "T'es trop petite, la Fraise ! Tu feras jamais rien de ta vie !",
+     "emotion": "malin"
+    },
+    {
+     "who": "fraise",
+     "say": "Un jour, tu verras…",
+     "emotion": "triste"
+    }
+   ]
+  },
+  {
+   "background": "luxury CEO office with glass walls and city skyline, big wooden desk",
+   "lines": [
+    {
+     "who": "narrateur",
+     "say": "Dix ans plus tard, le Kiwi passe un entretien d'embauche."
+    },
+    {
+     "who": "kiwi",
+     "say": "Bonjour, je viens pour le poste de…",
+     "emotion": "neutre"
+    },
+    {
+     "who": "kiwi",
+     "say": "La Fraise ?!",
+     "emotion": "choc"
+    },
+    {
+     "who": "fraise",
+     "say": "Alors… je suis toujours trop petite ?",
+     "emotion": "malin"
+    }
+   ]
+  }
+ ],
+ "caption": "🍓 Il se moquait d'elle au lycée… 10 ans plus tard, c'est ELLE la patronne 😳\n\nTu l'embauches ou pas ? 👇\nPartie 2 ?\n\n#revanche #fruitdrama #fruits #drama #histoire #humour #3d #fyp #pourtoi"
+}

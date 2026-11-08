@@ -25,7 +25,14 @@ DEFAULTS = {  # fruit -> (voix, hauteur, couleur, emoji)
     "orange": ("fr-CA-AntoineNeural", "+0Hz", (255, 159, 28), "🍊"),
     "pomme": ("fr-FR-VivienneMultilingualNeural", "+10Hz", (230, 57, 70), "🍎"),
     "citron": ("fr-FR-EloiseNeural", "+10Hz", (247, 231, 51), "🍋"),
+    "pasteque": ("fr-FR-HenriNeural", "-20Hz", (120, 200, 90), "🍉"),
+    "ananas": ("fr-BE-GerardNeural", "-5Hz", (250, 200, 40), "🍍"),
+    "coco": ("fr-CA-JeanNeural", "-5Hz", (170, 120, 80), "🥥"),
+    "cerise": ("fr-FR-DeniseNeural", "+15Hz", (220, 30, 60), "🍒"),
+    "mangue": ("fr-CA-AntoineNeural", "+0Hz", (255, 170, 40), "🥭"),
+    "grenade": ("fr-CA-ThierryNeural", "-5Hz", (200, 30, 50), "🔴"),
 }
+NARRATOR = ("fr-FR-RemyMultilingualNeural", "-5Hz")
 
 
 # ---------- voix ----------
@@ -60,7 +67,7 @@ def synth_line(text, voice, pitch, tmp, k):
 # ---------- rendu 3D des plans ----------
 def render_shots(ep, plan, cache):
     import fruits3d as F
-    F.build_scene(ep["cast"])
+    F.build_scene(ep["cast"], transparent=bool(ep.get("scenes")))
     out = {}
     for key in sorted(set(p["key"] for p in plan)):
         speaker, emotion, kind = key
@@ -69,8 +76,14 @@ def render_shots(ep, plan, cache):
         for n in F.CHARS:
             F.pose(n, "neutre")
         F.shot(kind, speaker if kind != "wide" else None)
-        F.pose(speaker, emotion, 0)
         base = os.path.join(d, "base.png")
+        if speaker == "narrateur":  # plan large, personne ne parle
+            if not os.path.exists(base):
+                F.render(base)
+            out[key] = {"base": base, "region": None}
+            print(f"  plan narrateur ok", flush=True)
+            continue
+        F.pose(speaker, emotion, 0)
         if not os.path.exists(base):
             F.render(base)
         region = F.face_region(speaker)
@@ -86,14 +99,48 @@ def render_shots(ep, plan, cache):
     return out
 
 
-def load_shot(info):
-    base = Image.open(info["base"]).convert("RGB")
+def load_shot(info, bg=None):
+    base = Image.open(info["base"]).convert("RGBA")
+    if info["region"] is None:
+        layers = {k: base for k in ("m0", "m1", "m2", "m3", "blink")}
+    else:
+        layers = face_layers(info, base)
+    if bg is not None:
+        layers = {k: Image.alpha_composite(bg, v) for k, v in layers.items()}
+    return {k: v.convert("RGB") for k, v in layers.items()}
+
+
+def fetch_background(prompt, path, seed):
+    """Décor gratuit (Pollinations) : 720x1280, filigrane coupé, léger flou de profondeur."""
+    import urllib.parse, urllib.request, time
+    if not os.path.exists(path):
+        url = ("https://image.pollinations.ai/prompt/" + urllib.parse.quote(prompt + ", cinematic, photorealistic, no people")
+               + f"?width=720&height=1280&seed={seed}&nologo=true")
+        for k in range(5):
+            try:
+                urllib.request.urlretrieve(url, path + ".tmp")
+                os.replace(path + ".tmp", path)
+                break
+            except Exception as exc:
+                print(f"  décor : nouvel essai ({exc.__class__.__name__})", flush=True)
+                time.sleep(20 * (k + 1))
+        else:
+            raise RuntimeError("décor indisponible")
+    im = Image.open(path).convert("RGB")
+    im = im.crop((0, 0, im.width, int(im.height * 0.94)))  # coupe le filigrane en bas
+    s = max(720 / im.width, 1280 / im.height)
+    im = im.resize((int(im.width * s) + 1, int(im.height * s) + 1), Image.LANCZOS)
+    x, y = (im.width - 720) // 2, (im.height - 1280) // 2
+    return im.crop((x, y, x + 720, y + 1280)).filter(ImageFilter.GaussianBlur(2)).convert("RGBA")
+
+
+def face_layers(info, base):
     bw, bh = base.size
     x0, y0, x1, y1 = info["region"]
     box = (int(round(x0 * bw)), int(round((1 - y1) * bh)))
     layers = {"m0": base}
     for name in ("m1", "m2", "m3", "blink"):
-        crop = Image.open(info[name]).convert("RGB")
+        crop = Image.open(info[name]).convert("RGBA")
         mask = Image.new("L", crop.size, 0)
         ImageDraw.Draw(mask).rectangle((6, 6, crop.width - 7, crop.height - 7), fill=255)
         mask = mask.filter(ImageFilter.GaussianBlur(4))
@@ -105,6 +152,8 @@ def load_shot(info):
 
 # ---------- montage ----------
 def name_tag(img, who, ep):
+    if who == "narrateur":
+        return
     ch = next(c for c in ep["cast"] if c["name"] == who)
     col = tuple(ch.get("color", DEFAULTS[ch["fruit"]][2]))
     label = f'{ch.get("emoji", DEFAULTS[ch["fruit"]][3])} {ch.get("label", who.capitalize())}'
@@ -123,15 +172,27 @@ def render_episode(ep, out_dir):
     tmp = tempfile.mkdtemp()
     cache = os.path.join(out_dir, ".cache", slug)
     cast = {c["name"]: c for c in ep["cast"]}
+    os.makedirs(cache, exist_ok=True)
+    # décors (gratuits) et répliques : format « scenes » (avec décor) ou « lines » (cuisine)
+    bgs, all_lines = [], []
+    for si, sc in enumerate(ep.get("scenes", [])):
+        bgs.append(fetch_background(sc["background"], os.path.join(cache, f"bg{si}.jpg"),
+                                    int(hashlib.md5(f"{slug}{si}".encode()).hexdigest()[:6], 16)))
+        all_lines += [{**ln, "bg": si} for ln in sc["lines"]]
+    if not bgs:
+        all_lines = list(ep["lines"])
     # 1) voix
     print(f"[{slug}] voix…", flush=True)
     lines, t = [], 0.15
-    for k, ln in enumerate(ep["lines"]):
-        c = cast[ln["who"]]
-        voice, pitch = c.get("voice", DEFAULTS[c["fruit"]][0]), c.get("pitch", DEFAULTS[c["fruit"]][1])
+    for k, ln in enumerate(all_lines):
+        if ln["who"] == "narrateur":
+            voice, pitch = NARRATOR
+        else:
+            c = cast[ln["who"]]
+            voice, pitch = c.get("voice", DEFAULTS[c["fruit"]][0]), c.get("pitch", DEFAULTS[c["fruit"]][1])
         a, starts = synth_line(ln["say"], voice, pitch, tmp, k)
-        emo = ln.get("emotion", "neutre")
-        kind = ln.get("shot", "zoom" if emo == "choc" else "close")
+        emo = "neutre" if ln["who"] == "narrateur" else ln.get("emotion", "neutre")
+        kind = "wide" if ln["who"] == "narrateur" else ln.get("shot", "zoom" if emo == "choc" else "close")
         lines.append({**ln, "audio": a, "start": t, "end": t + len(a) / SR, "starts": starts,
                       "key": (ln["who"], emo, kind)})
         t += len(a) / SR + ln.get("pause", 0.18)
@@ -165,10 +226,13 @@ def render_episode(ep, out_dir):
         for ln in lines:
             if ln["start"] - 0.1 <= tt:
                 cur = ln
-        if cur["key"] not in loaded:
-            loaded = {cur["key"]: load_shot(shots[cur["key"]])}
-        layers = loaded[cur["key"]]
+        lk = (cur["key"], cur.get("bg"))
+        if lk not in loaded:
+            loaded = {lk: load_shot(shots[cur["key"]], bgs[cur["bg"]] if bgs else None)}
+        layers = loaded[lk]
         e = float(env[min(len(env) - 1, i)]) if cur["start"] <= tt <= cur["end"] + 0.05 else 0.0
+        if cur["who"] == "narrateur":
+            e = 0.0
         lvl = 0 if e < 0.12 else 1 if e < 0.4 else 2 if e < 0.7 else 3
         blink = lvl == 0 and (tt + hash(cur["who"]) % 7 * 0.37) % 3.1 < 0.12
         frame = layers["blink" if blink else f"m{lvl}"]
@@ -182,9 +246,12 @@ def render_episode(ep, out_dir):
         ox, oy = (frame.width - sx) // 2, int((frame.height - sy) * 0.4)
         img = frame.crop((ox, oy, ox + sx, oy + sy)).resize((W, H), Image.BICUBIC).convert("RGBA")
         if ep.get("title") and tt < 3.0:
-            od = ImageDraw.Draw(img)
-            R.draw_text(img, od, ((W - R.text_len(od, ep["title"], title_f)) / 2, 240), ep["title"], title_f,
-                        (255, 255, 255, 255))
+            layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+            ld = ImageDraw.Draw(layer)
+            tw = R.text_len(ld, ep["title"], title_f)
+            ld.rounded_rectangle(((W - tw) / 2 - 30, 250, (W + tw) / 2 + 30, 334), 20, fill=(200, 20, 40, 230))
+            R.draw_text(layer, ld, ((W - tw) / 2, 260), ep["title"], title_f, (255, 255, 255, 255), shadow=False)
+            img.alpha_composite(layer)
         if cur["start"] <= tt <= cur["end"]:
             name_tag(img, cur["who"], ep)
         G.subtitles(img, tt)
@@ -199,7 +266,14 @@ def render_episode(ep, out_dir):
         wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(SR)
         wf.writeframes((np.clip(track, -1, 1) * 32767).astype(np.int16).tobytes())
     out = os.path.join(out_dir, slug + ".mp4")
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", silent, "-i", vpath, "-map", "0:v", "-map", "1:a",
+    if ep.get("music"):
+        mpath = os.path.join(tmp, "m.wav")
+        R.music_track(mpath, dur, ep["music"])
+        mix = ["-i", mpath, "-filter_complex", "[2:a]volume=0.18[m];[1:a][m]amix=inputs=2:duration=first:normalize=0[a]",
+               "-map", "0:v", "-map", "[a]"]
+    else:
+        mix = ["-map", "0:v", "-map", "1:a"]
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", silent, "-i", vpath, *mix,
                     "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-ar", "44100", "-shortest", out], check=True)
     with open(os.path.join(out_dir, slug + ".txt"), "w", encoding="utf-8") as fh:
         fh.write(ep.get("caption", "").strip() + "\n")

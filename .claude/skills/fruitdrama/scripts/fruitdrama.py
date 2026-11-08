@@ -22,6 +22,7 @@ W, H, FPS, SR = 1080, 1920, 30, 24000
 API = "https://api.kie.ai/api/v1/jobs"
 STYLE = ("Cinematic 3D Pixar-style render, ultra detailed, dramatic movie lighting, vertical 9:16 composition. "
          "The characters are humans with giant realistic fruit heads that have expressive cartoon faces. ")
+ALLOW_PAID = False
 NARRATOR = {"voice": "fr-FR-RemyMultilingualNeural", "pitch": "-5Hz", "color": (240, 240, 240), "label": "", "emoji": ""}
 
 
@@ -74,6 +75,11 @@ def generate_images(ep, cache):
     meta_path = os.path.join(cache, "urls.json")
     meta = json.load(open(meta_path)) if os.path.exists(meta_path) else {}
     scenes = ep["scenes"]
+    missing = [i for i in range(len(scenes)) if str(i) not in meta]
+    if missing and not ALLOW_PAID:
+        sys.exit("Images manquantes : la génération kie.ai coûte des crédits. L'utilisateur a demandé de NE PAS "
+                 "les dépenser. Utiliser plutôt le skill gratuit `fruits` (décors gratuits + fruits 3D). "
+                 "Option --use-kie-credits uniquement si l'utilisateur l'autorise explicitement pour cette demande.")
 
     def prompt_of(sc, i):
         p = STYLE + sc["image"]
@@ -227,7 +233,11 @@ def main():
     ap.add_argument("episodes", nargs="+")
     ap.add_argument("--out-dir", default="videos/fruitdrama")
     ap.add_argument("--images-only", action="store_true")
+    ap.add_argument("--use-kie-credits", action="store_true",
+                    help="autorise à dépenser des crédits kie.ai (seulement avec l'accord explicite de l'utilisateur)")
     args = ap.parse_args()
+    global ALLOW_PAID
+    ALLOW_PAID = args.use_kie_credits
     os.makedirs(args.out_dir, exist_ok=True)
     for path in args.episodes:
         with open(path, encoding="utf-8") as fh:

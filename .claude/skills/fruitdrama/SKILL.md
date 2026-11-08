@@ -3,7 +3,12 @@ name: fruitdrama
 description: Crée des vidéos TikTok « fruit drama » avec images IA réalistes style Pixar (humains à tête de fruit dans des décors comme prison, décharge, mine, restaurant de luxe), histoires à rebondissement choisies par Claude, narrateur + voix par personnage, sous-titres. Utiliser quand l'utilisateur demande des vidéos fruit drama, des histoires de fruits IA, ou "N vidéos du genre fruit drama".
 ---
 
-# Fruit drama (images IA)
+# Fruit drama (images IA, PAYANT)
+
+> **IMPORTANT — l'utilisateur a demandé de ne PAS dépenser ses crédits kie.ai.**
+> Par défaut, fais les vidéos fruit drama avec le skill gratuit **`fruits`** (décors gratuits + fruits 3D,
+> format `scenes`, voir son SKILL.md). N'utilise ce skill-ci que si l'utilisateur autorise explicitement,
+> pour la demande en cours, à dépenser ses crédits ; le script refuse sans `--use-kie-credits`.
 
 L'utilisateur demande N vidéos. **Tu choisis les sujets** (sauf s'il en donne), tu écris les histoires,
 tu génères les images, tu montes, tu livres MP4 + descriptions. Pas de questions.

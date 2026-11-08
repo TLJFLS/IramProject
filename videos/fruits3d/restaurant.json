@@ -1,0 +1,59 @@
+{
+ "slug": "restaurant",
+ "title": "IL L'A JUGÉ SUR SES HABITS 👀",
+ "music": "epic",
+ "cast": [
+  {
+   "name": "citron",
+   "fruit": "citron",
+   "label": "Citron"
+  },
+  {
+   "name": "coco",
+   "fruit": "coco",
+   "label": "Coco"
+  },
+  {
+   "name": "ananas",
+   "fruit": "ananas",
+   "label": "Ananas"
+  }
+ ],
+ "scenes": [
+  {
+   "background": "luxurious golden restaurant interior, chandeliers, elegant tables",
+   "lines": [
+    {
+     "who": "citron",
+     "say": "Désolé, ici c'est pas pour les fruits comme toi. Dehors !",
+     "emotion": "malin"
+    },
+    {
+     "who": "coco",
+     "say": "Très bien. Je peux juste passer un coup de fil ?",
+     "emotion": "neutre"
+    },
+    {
+     "who": "narrateur",
+     "say": "Deux minutes plus tard, le patron arrive en courant."
+    },
+    {
+     "who": "ananas",
+     "say": "Monsieur Coco ! Le propriétaire de l'immeuble ! Pardon !",
+     "emotion": "choc"
+    },
+    {
+     "who": "citron",
+     "say": "Le… le propriétaire ?!",
+     "emotion": "choc"
+    },
+    {
+     "who": "coco",
+     "say": "À partir de demain, c'est toi qui fais la plonge.",
+     "emotion": "malin"
+    }
+   ]
+  }
+ ],
+ "caption": "👀 Le serveur l'a jugé sur ses habits… il ne savait pas QUI il était 😳\n\nIl mérite la plonge ou pas ? 👇\nPartie 2 ?\n\n#karma #fruitdrama #fruits #drama #histoire #humour #3d #fyp #pourtoi"
+}

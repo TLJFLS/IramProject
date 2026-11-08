@@ -1,0 +1,60 @@
+{
+ "slug": "mine",
+ "title": "LA MINE D'OR ⛏️",
+ "music": "epic",
+ "cast": [
+  {
+   "name": "grenade",
+   "fruit": "grenade",
+   "label": "Grenade",
+   "accessory": "chapeau"
+  },
+  {
+   "name": "banane",
+   "fruit": "banane",
+   "label": "Banane",
+   "accessory": "casque"
+  }
+ ],
+ "scenes": [
+  {
+   "background": "underground gold mine tunnel, wooden beams, oil lanterns, gold veins in the rock, warm light",
+   "lines": [
+    {
+     "who": "narrateur",
+     "say": "Le patron Grenade payait ses mineurs une misère."
+    },
+    {
+     "who": "grenade",
+     "say": "Voilà ta paie. Cinq euros. Et dis merci.",
+     "emotion": "malin"
+    },
+    {
+     "who": "banane",
+     "say": "Cinq euros pour un mois de travail ?",
+     "emotion": "triste"
+    },
+    {
+     "who": "narrateur",
+     "say": "Mais ce jour-là, la Banane trouva la plus grosse pépite d'or du monde."
+    },
+    {
+     "who": "grenade",
+     "say": "Donne-moi ça ! Tout ce qui est dans ma mine est à moi !",
+     "emotion": "colere"
+    },
+    {
+     "who": "banane",
+     "say": "Trop tard, patron. Avec la pépite, j'ai racheté la mine.",
+     "emotion": "malin"
+    },
+    {
+     "who": "grenade",
+     "say": "Quoi ?!",
+     "emotion": "choc"
+    }
+   ]
+  }
+ ],
+ "caption": "⛏️ Le patron voulait voler la pépite… mais la Banane avait un plan 🔥\n\nTeam Banane ou Team Grenade ? 👇\nPartie 2 ?\n\n#mine #or #fruitdrama #fruits #drama #histoire #humour #3d #fyp #pourtoi"
+}
