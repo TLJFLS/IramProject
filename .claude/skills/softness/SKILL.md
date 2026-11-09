@@ -15,9 +15,14 @@ python3 .claude/skills/softness/scripts/softness.py --game tube --color rouge --
 Options :
 - `--game` : `scies` (4 scies au-dessus d'un socle troué), `tube` (tube en verre plus étroit que la capsule :
   0 % reste bloquée dessus, plus c'est mou plus elle s'enfonce, 100 % traverse tout) ou `grille`
-  (grille de barreaux avec petite ouverture carrée au centre, même comportement que les scies, sans rotation).
+  (grille de barreaux avec petite ouverture carrée au centre, même comportement que les scies, sans rotation)
+  ou `engrenages` (deux engrenages en marbre qui tournent en sens inverse : molle, la pâte est laminée entre
+  les dents puis tombe dans le trou).
+- `--objet` : `capsule` (défaut) ou `bille`.
+- `--style` : `rose` (socle hexagonal rose, texte « SOFTNESS XX % ») ou `marbre` (marbre gris, bagues dorées,
+  rayons de lumière, texte noir « XX% SOFT ») ; défaut `marbre` pour `engrenages`, `rose` sinon.
   **Alterner les jeux** d'une vidéo à l'autre pour varier le contenu.
-- `--color` : `bleu` (défaut), `rouge`, `vert`, `jaune`, `rose`, `violet`, `orange` → varier pour faire une série.
+- `--color` : `bleu` (défaut), `rouge`, `vert`, `jaune`, `rose`, `violet`, `orange`, `chrome`, `or` → varier.
 - `--steps` : paliers en %, défaut **`0,20,50,75,100`** (choix de l'utilisateur : ~14 s de vidéo, ~30 min de rendu).
   Ne mettre d'autres paliers que si l'utilisateur le demande.
 - `--seconds 2.8` (durée par essai), `--fps 24`, `--samples 8`, `--res 540x960` (agrandi en 1080x1920).

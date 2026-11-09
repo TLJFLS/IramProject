@@ -14,7 +14,7 @@ Options : --fps 24, --seconds 2.8 (par essai), --samples 12, --res 540x960 (agra
 import argparse, math, os, subprocess, sys, tempfile, wave
 import numpy as np
 
-COLORS = {"bleu": (0.08, 0.35, 0.95), "rouge": (0.9, 0.05, 0.08), "vert": (0.1, 0.75, 0.2),
+COLORS = {"chrome": (0.92, 0.92, 0.95), "or": (1.0, 0.7, 0.18), "bleu": (0.08, 0.35, 0.95), "rouge": (0.9, 0.05, 0.08), "vert": (0.1, 0.75, 0.2),
           "jaune": (1.0, 0.75, 0.02), "rose": (1.0, 0.3, 0.6), "violet": (0.5, 0.15, 0.9), "orange": (1.0, 0.4, 0.02)}
 
 # ---------- géométrie de la capsule et loi de déformation ----------
@@ -22,8 +22,10 @@ R0, HC = 0.45, 2.6          # rayon, hauteur
 PLANE = 1.26                # dessus des scies (ou haut du tube)
 GAP = 0.2                   # rayon du passage entre les 4 scies (ou rayon intérieur du tube)
 HOLE = 0.56                 # rayon du trou du socle
-GAME = "scies"              # "scies", "tube" ou "grille"
+GAME = "scies"              # "scies", "tube", "grille" ou "engrenages"
+STYLE = "rose"              # "rose" (socle hexagonal) ou "marbre" (marbre gris, bagues dorées, rayons de lumière)
 TUBE_IN, TUBE_TOP = 0.3, 1.9
+GEAR_R, GEAR_X, GEAR_Z = 0.7, 0.75, 1.55   # rayon des engrenages, écart au centre, hauteur de l'axe
 
 
 def set_game(game):
@@ -31,6 +33,9 @@ def set_game(game):
     GAME = game
     if game == "tube":
         PLANE, GAP = TUBE_TOP, TUBE_IN
+    elif game == "engrenages":  # l'objet repose dans le creux entre les deux engrenages
+        PLANE = GEAR_Z + math.sqrt((GEAR_R + R0) ** 2 - GEAR_X ** 2) - R0
+        GAP = 0.09
 NT, NC, NB = 48, 12, 26     # segments autour, anneaux par demi-sphère, anneaux du corps
 
 
@@ -68,15 +73,23 @@ def capsule_mesh():
     return np.array(verts_h), np.array(verts_t), faces
 
 
-VH, VT, FACES = capsule_mesh()
-_hh = np.linspace(0, HC, 4000)
-_dv = np.pi * r0_of(_hh) ** 2
-_F = np.concatenate([[0], np.cumsum((_dv[1:] + _dv[:-1]) / 2 * np.diff(_hh))])
-VOL = _F[-1]
-_F /= VOL
-KC = VOL / (math.pi * R0 ** 2 * HC)
-VF = np.interp(VH, _hh, _F)            # fraction de volume de chaque sommet (du bas vers le haut)
-COS, SIN = np.cos(VT), np.sin(VT)
+def init_object(r0, hc):
+    """Capsule (r0, hc) ou bille (hc = 2 r0) : maillage + table des volumes."""
+    global R0, HC, NB, VH, VT, FACES, _hh, _F, VOL, KC, VF, COS, SIN
+    R0, HC = r0, hc
+    NB = max(1, int(round(26 * (HC - 2 * R0) / 1.7)))
+    VH, VT, FACES = capsule_mesh()
+    _hh = np.linspace(0, HC, 4000)
+    dv = np.pi * r0_of(_hh) ** 2
+    _F = np.concatenate([[0], np.cumsum((dv[1:] + dv[:-1]) / 2 * np.diff(_hh))])
+    VOL = _F[-1]
+    _F = _F / VOL
+    KC = VOL / (math.pi * R0 ** 2 * HC)
+    VF = np.interp(VH, _hh, _F)            # fraction de volume de chaque sommet (du bas vers le haut)
+    COS, SIN = np.cos(VT), np.sin(VT)
+
+
+init_object(R0, HC)
 
 
 def shape(qh):
@@ -206,7 +219,13 @@ def deform(st):
             rad = np.maximum(rad, GAP * np.exp(-((z - PLANE) / 0.12) ** 2))
             rad = np.where(np.abs(z - PLANE) < 0.05, np.minimum(rad, GAP), rad)
         z = z if Vl > 0 else z
-    x = COS * rad + st["jx"]
+    kx = np.ones_like(rad)
+    if GAME == "engrenages" and not (st["free"] or not st["hit"]):
+        # entre les engrenages la pâte est laminée : très fine en x, large en y
+        nip = (z < PLANE) & (z > GEAR_Z - GEAR_R * 0.9)
+        kx = np.where(nip, np.minimum(1.0, GAP / np.maximum(rad, 1e-4)), 1.0)
+        rad = np.where(nip, np.minimum(rad * 1.25, 0.6), rad)
+    x = COS * rad * kx + st["jx"]
     y = SIN * rad + st["jy"]
     return np.stack([x, y, z], axis=1)
 
@@ -255,12 +274,36 @@ def build_scene(color, res, samples):
         nt.links.new(bump.outputs["Normal"], b.inputs["Normal"])
         return m
 
+    def grey_marble():
+        m = bpy.data.materials.new("marbre_gris")
+        m.use_nodes = True
+        nt = m.node_tree
+        b = nt.nodes["Principled BSDF"]
+        b.inputs["Roughness"].default_value = 0.35
+        n = nt.nodes.new("ShaderNodeTexNoise")
+        n.inputs["Scale"].default_value = 3
+        n.inputs["Detail"].default_value = 15
+        n.inputs["Distortion"].default_value = 2.5
+        ramp = nt.nodes.new("ShaderNodeValToRGB")
+        ramp.color_ramp.elements[0].color = (0.32, 0.33, 0.36, 1)
+        ramp.color_ramp.elements[1].color = (0.82, 0.83, 0.85, 1)
+        ramp.color_ramp.elements[0].position = 0.38
+        ramp.color_ramp.elements[1].position = 0.62
+        nt.links.new(n.outputs["Fac"], ramp.inputs["Fac"])
+        nt.links.new(ramp.outputs["Color"], b.inputs["Base Color"])
+        return m
+
     gold = mat("or", (1.0, 0.72, 0.15), 0.2, 1.0)
     chrome = mat("chrome", (0.9, 0.9, 0.92), 0.12, 1.0)
-    # socle hexagonal percé
-    bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=1.75, depth=4, location=(0, 0, -2), rotation=(0, 0, math.radians(30)))
+    stone = grey_marble() if STYLE == "marbre" else marble()
+    # socle percé (hexagonal ou rond)
+    if STYLE == "marbre":
+        bpy.ops.mesh.primitive_cylinder_add(vertices=96, radius=1.85, depth=4, location=(0, 0, -2))
+    else:
+        bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=1.75, depth=4, location=(0, 0, -2),
+                                            rotation=(0, 0, math.radians(30)))
     ped = bpy.context.object
-    ped.data.materials.append(marble())
+    ped.data.materials.append(stone)
     bpy.ops.mesh.primitive_cylinder_add(vertices=64, radius=HOLE, depth=6, location=(0, 0, -2))
     cut = bpy.context.object
     mod = ped.modifiers.new("trou", "BOOLEAN")
@@ -269,10 +312,28 @@ def build_scene(color, res, samples):
     bpy.ops.object.modifier_apply(modifier="trou")
     bpy.data.objects.remove(cut)
     bpy.ops.object.shade_flat()
+    if STYLE == "marbre":
+        bpy.ops.object.shade_smooth()
     # arêtes dorées et bord du trou
-    top = [ped.matrix_world @ v.co for v in ped.data.vertices if abs((ped.matrix_world @ v.co).z) < 1e-3
+    top = [] if STYLE == "marbre" else [ped.matrix_world @ v.co for v in ped.data.vertices if abs((ped.matrix_world @ v.co).z) < 1e-3
            and (ped.matrix_world @ v.co).xy.length > 1.5]
     corners = sorted({(round(v.x, 4), round(v.y, 4)) for v in top}, key=lambda c: math.atan2(c[1], c[0]))
+    if STYLE == "marbre":  # bagues dorées et rondelle autour du trou
+        for z in (-0.04, -1.0):  # anneaux dorés autour du socle (pas un disque plein)
+            bpy.ops.mesh.primitive_torus_add(major_radius=1.85, minor_radius=0.05, major_segments=128, location=(0, 0, z))
+            bpy.context.object.data.materials.append(gold)
+            bpy.ops.object.shade_smooth()
+        bpy.ops.mesh.primitive_cylinder_add(vertices=64, radius=HOLE + 0.28, depth=0.04, location=(0, 0, 0.01))
+        washer = bpy.context.object
+        bpy.ops.mesh.primitive_cylinder_add(vertices=64, radius=HOLE, depth=1, location=(0, 0, 0))
+        hcut = bpy.context.object
+        wm = washer.modifiers.new("trou", "BOOLEAN")
+        wm.operation, wm.object = "DIFFERENCE", hcut
+        bpy.context.view_layer.objects.active = washer
+        bpy.ops.object.modifier_apply(modifier="trou")
+        bpy.data.objects.remove(hcut)
+        washer.data.materials.clear()
+        washer.data.materials.append(gold)
     for k, (x, y) in enumerate(corners):
         bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.025, depth=4, location=(x, y, -2))
         bpy.context.object.data.materials.append(gold)
@@ -281,8 +342,9 @@ def build_scene(color, res, samples):
         bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.025, depth=L, location=((x + x2) / 2, (y + y2) / 2, 0),
                                             rotation=(0, math.pi / 2, math.atan2(y2 - y, x2 - x)))
         bpy.context.object.data.materials.append(gold)
-    bpy.ops.mesh.primitive_torus_add(major_radius=HOLE + 0.02, minor_radius=0.03, location=(0, 0, 0))
-    bpy.context.object.data.materials.append(gold)
+    if STYLE != "marbre":
+        bpy.ops.mesh.primitive_torus_add(major_radius=HOLE + 0.02, minor_radius=0.03, location=(0, 0, 0))
+        bpy.context.object.data.materials.append(gold)
     # intérieur du trou bien sombre
     bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=HOLE - 0.005, depth=0.01, location=(0, 0, -1.4))
     bpy.context.object.data.materials.append(mat("fond", (0.02, 0.01, 0.01), 0.9))
@@ -314,6 +376,52 @@ def build_scene(color, res, samples):
         bpy.context.object.data.materials.append(gold)
         bpy.ops.mesh.primitive_torus_add(major_radius=TUBE_IN + 0.08, minor_radius=0.04, location=(0, 0, 0.02))
         bpy.context.object.data.materials.append(gold)
+    if GAME == "engrenages":  # deux engrenages qui tournent en sens inverse
+        teeth_n = 12
+        stp = 2 * math.pi / teeth_n
+        outline = []
+        for k in range(teeth_n):
+            a0 = k * stp
+            for frac, rr in ((0.0, 0.55), (0.12, GEAR_R), (0.45, GEAR_R), (0.57, 0.55)):
+                outline.append((rr * math.cos(a0 + frac * stp), rr * math.sin(a0 + frac * stp)))
+        # maillage construit à la main (faces en éventail depuis le centre : pas de mauvaise triangulation)
+        nO = len(outline)
+        gverts = [(x, y, -0.75) for x, y in outline] + [(x, y, 0.75) for x, y in outline] + [(0, 0, -0.75), (0, 0, 0.75)]
+        cF, cB = 2 * nO, 2 * nO + 1
+        gfaces = []
+        for i in range(nO):
+            j = (i + 1) % nO
+            gfaces.append((i, j, nO + j, nO + i))
+            gfaces.append((cF, j, i))
+            gfaces.append((cB, nO + i, nO + j))
+        gb = bmesh.new()
+        bvs = [gb.verts.new(v) for v in gverts]
+        for f in gfaces:
+            gb.faces.new([bvs[i] for i in f])
+        bmesh.ops.recalc_face_normals(gb, faces=gb.faces[:])
+        gmesh = bpy.data.meshes.new("engrenage")
+        gb.to_mesh(gmesh)
+        gb.free()
+        gmat = grey_marble() if STYLE == "marbre" else stone
+        if STYLE == "marbre":  # engrenages plus foncés pour se détacher du fond clair
+            r = gmat.node_tree.nodes["Color Ramp"].color_ramp
+            r.elements[0].color = (0.16, 0.17, 0.19, 1)
+            r.elements[1].color = (0.5, 0.51, 0.54, 1)
+            gmat.node_tree.nodes["Noise Texture"].inputs["Scale"].default_value = 1.2
+        gmesh.materials.append(gmat)
+        for side in (-1, 1):
+            g = bpy.data.objects.new("engrenage", gmesh)
+            sc.collection.objects.link(g)
+            g.location = (side * GEAR_X, 0, GEAR_Z)
+            g.rotation_euler = (math.pi / 2, 0, 0)
+            g["sens"] = side
+            blades.append(g)
+            bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.16, depth=1.56, location=(side * GEAR_X, 0, GEAR_Z),
+                                                rotation=(math.pi / 2, 0, 0))
+            bpy.context.object.data.materials.append(gold)
+            bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.045, depth=GEAR_Z - GEAR_R * 0.6,
+                                                location=(side * GEAR_X, -0.5, (GEAR_Z - GEAR_R * 0.6) / 2))
+            bpy.context.object.data.materials.append(chrome)
     if GAME == "grille":  # grille de barreaux, ouverture carrée au centre
         steel = mat("acier", (0.85, 0.85, 0.9), 0.18, 1.0)
         for i, c in enumerate([-1.0, -0.62, -GAP - 0.05, GAP + 0.05, 0.62, 1.0]):
@@ -336,7 +444,7 @@ def build_scene(color, res, samples):
     teeth = 12
     bm = bmesh.new()
     pts = []
-    if GAME in ("tube", "grille"):
+    if GAME in ("tube", "grille", "engrenages"):
         teeth = 0
     step = 2 * math.pi / max(teeth, 1)
     for k in range(teeth):
@@ -353,7 +461,7 @@ def build_scene(color, res, samples):
     blade_mesh = bpy.data.meshes.new("scie")
     bm.to_mesh(blade_mesh)
     bm.free()
-    for k, (sx, sy) in enumerate([] if GAME in ("tube", "grille") else [(1, 1), (-1, 1), (-1, -1), (1, -1)]):
+    for k, (sx, sy) in enumerate([] if GAME in ("tube", "grille", "engrenages") else [(1, 1), (-1, 1), (-1, -1), (1, -1)]):
         o = bpy.data.objects.new(f"scie{k}", blade_mesh)
         sc.collection.objects.link(o)
         o.location = (sx * dpos, sy * dpos, PLANE - 0.04 - (0.045 if k % 2 else 0.0))
@@ -365,7 +473,8 @@ def build_scene(color, res, samples):
     me.update()
     cap = bpy.data.objects.new("capsule", me)
     sc.collection.objects.link(cap)
-    m = mat("capsule", tuple(c * 0.75 for c in color), 0.38, 0.0, 0.0)
+    metal = color in (COLORS["chrome"], COLORS["or"])
+    m = mat("capsule", color if metal else tuple(c * 0.75 for c in color), 0.1 if metal else 0.38, 1.0 if metal else 0.0)
     n = m.node_tree.nodes.new("ShaderNodeTexNoise")
     n.inputs["Scale"].default_value = 40
     bump = m.node_tree.nodes.new("ShaderNodeBump")
@@ -379,10 +488,11 @@ def build_scene(color, res, samples):
     w = bpy.data.worlds.new("monde")
     sc.world = w
     w.use_nodes = True
-    w.node_tree.nodes["Background"].inputs[0].default_value = (0.42, 0.26, 0.24, 1)
+    bg_col, wall_col = ((0.42, 0.26, 0.24), (0.55, 0.36, 0.32)) if STYLE != "marbre" else ((0.6, 0.6, 0.62), (0.78, 0.78, 0.8))
+    w.node_tree.nodes["Background"].inputs[0].default_value = (*bg_col, 1)
     w.node_tree.nodes["Background"].inputs[1].default_value = 0.7
     bpy.ops.mesh.primitive_plane_add(size=40, location=(0, 9, 3), rotation=(math.pi / 2, 0, 0))
-    bpy.context.object.data.materials.append(mat("mur", (0.55, 0.36, 0.32), 0.9))
+    bpy.context.object.data.materials.append(mat("mur", wall_col, 0.9))
     for loc, en, size, rot in [((-4, -5, 7), 1600, 6, (math.radians(45), 0, math.radians(-35))),
                                ((5, -3, 4), 700, 5, (math.radians(60), 0, math.radians(55))),
                                ((0, 4, 6), 600, 4, (math.radians(-40), 0, 0))]:
@@ -392,7 +502,7 @@ def build_scene(color, res, samples):
     camo = bpy.context.object
     sc.camera = camo
     camo.data.lens = 40
-    target = Vector((0, 0, 1.45 if GAME != "tube" else 1.75))
+    target = Vector((0, 0, 1.75 if GAME in ("tube", "engrenages") else 1.45))
     camo.rotation_euler = (target - camo.location).to_track_quat("-Z", "Y").to_euler()
     sc.render.engine = "CYCLES"
     sc.cycles.device = "CPU"
@@ -424,7 +534,10 @@ def render_frame(cap, blades, s, t, gt, path):
     cap.data.vertices.foreach_set("co", co)
     cap.data.update()
     for k, b in enumerate(blades):
-        b.rotation_euler.z = (1 if k % 2 else -1) * gt * 9.0
+        if GAME == "engrenages":
+            b.rotation_euler.y = b["sens"] * gt * 2.2 + (0.2 if b["sens"] > 0 else 0.0)
+        else:
+            b.rotation_euler.z = (1 if k % 2 else -1) * gt * 9.0
     bpy.context.scene.render.filepath = path
     bpy.ops.render.render(write_still=True)
 
@@ -448,6 +561,20 @@ def overlay(frame, s, W=1080, H=1920):
         for ch, wd in zip(text, widths):
             d.text((x, y), ch, font=f, fill=(255, 255, 255, 235))
             x += wd + spacing
+    if STYLE == "marbre":
+        # rayons de lumière en diagonale + texte noir « XX% SOFT »
+        rays = Image.new("L", (W, H), 0)
+        rd = ImageDraw.Draw(rays)
+        for k, (x0, wd) in enumerate([(520, 70), (650, 110), (800, 60), (900, 140)]):
+            rd.polygon([(x0, 0), (x0 + wd, 0), (x0 + wd - 900, H), (x0 - 900, H)], fill=60 + 15 * (k % 2))
+        rays = rays.filter(ImageFilter.GaussianBlur(25))
+        img = Image.composite(Image.new("RGBA", (W, H), (255, 255, 255, 255)), img, rays)
+        fb = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 120)
+        txt = f"{int(round(s * 100))}% SOFT"
+        tw = d.textlength(txt, font=fb)
+        d.text(((W - tw) / 2, 300), txt, font=fb, fill=(15, 12, 12, 255))
+        img.alpha_composite(layer)
+        return img.convert("RGB")
     spaced("SOFTNESS", 330, 78, 26)
     spaced(f"{int(round(s * 100))} %", 445, 70, 18)
     glow = layer.filter(ImageFilter.GaussianBlur(10))
@@ -476,6 +603,12 @@ def soundtrack(steps, seconds, sr=44100):
     hum *= 0.8 + 0.2 * np.sin(2 * np.pi * 3 * t)
     whir = np.convolve(noise, np.ones(8) / 8, mode="same") * 0.03
     out = hum + whir if GAME == "scies" else whir * 0.3
+    if GAME == "engrenages":  # cliquetis des dents
+        clicks = np.zeros(n)
+        L = int(0.012 * sr)
+        for k0 in range(0, n - L, int(sr / 11)):
+            clicks[k0:k0 + L] += noise[k0:k0 + L] * np.exp(-np.arange(L) / (0.003 * sr)) * 0.25
+        out = out + clicks
     t_hit = math.sqrt(2 * 1.25 / 9.8)
     for i, s in enumerate(steps):
         base = i * seconds
@@ -519,7 +652,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="videos/softness/softness.mp4")
     ap.add_argument("--steps", default="0,20,50,75,100")
-    ap.add_argument("--game", default="scies", choices=["scies", "tube", "grille"])
+    ap.add_argument("--game", default="scies", choices=["scies", "tube", "grille", "engrenages"])
+    ap.add_argument("--objet", default="capsule", choices=["capsule", "bille"])
+    ap.add_argument("--style", default=None, choices=["rose", "marbre"], help="défaut : marbre pour engrenages, sinon rose")
     ap.add_argument("--color", default="bleu")
     ap.add_argument("--fps", type=int, default=24)
     ap.add_argument("--seconds", type=float, default=2.8)
@@ -528,6 +663,10 @@ def main():
     ap.add_argument("--test", action="store_true", help="rend 3 images de contrôle")
     a = ap.parse_args()
     res = tuple(int(v) for v in a.res.split("x"))
+    global STYLE
+    STYLE = a.style or ("marbre" if a.game == "engrenages" else "rose")
+    if a.objet == "bille":
+        init_object(0.6, 1.2)
     set_game(a.game)
     steps = [int(v) / 100 for v in a.steps.split(",")]
     color = COLORS.get(a.color, COLORS["bleu"])
