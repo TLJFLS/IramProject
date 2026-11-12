@@ -1,0 +1,1009 @@
+{
+  "name": "Naylia — Système multi-agents",
+  "nodes": [
+    {
+      "id": "949177b1-82a8-5780-959c-da25b1553920",
+      "name": "Chat du site",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        900
+      ],
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {
+          "allowedOrigins": "*",
+          "responseMode": "lastNode"
+        }
+      },
+      "webhookId": "88277656-8661-57dd-82b9-eed7d3d41002"
+    },
+    {
+      "id": "b22b30fd-8576-56c7-a4a0-7b28811927ba",
+      "name": "Agent Service client",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        400,
+        900
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "maxIterations": 10,
+          "systemMessage": "Tu es l'assistante du service client de Naylia, boutique en ligne belge de beauté et de confort féminin (épilateur IPL, lingerie, guides). Tu parles aux clientes sur le chat du site.\n\nTon rôle :\n- Répondre aux questions sur les produits avec l'outil catalogue (prix, disponibilité, conseils). N'invente jamais une caractéristique absente du catalogue : dis que tu vas te renseigner et alerte la propriétaire.\n- Pour toute question sur une commande, utilise le sous-agent « Agent Suivi de commande ». Il faut d'abord obtenir le numéro de commande (ex. #1052) ET l'adresse e-mail utilisée pour la commande.\n- Réclamation, colis abîmé, remboursement, retour, cliente mécontente ou question que tu ne peux pas résoudre : rassure la cliente, dis-lui que l'équipe revient vers elle rapidement, et utilise l'outil « Alerter la propriétaire » avec un résumé clair (numéro de commande, e-mail, problème).\n\nRègles strictes :\n- Tu ne peux ni rembourser, ni annuler, ni modifier une commande, ni créer de code promo. Ne le promets jamais.\n- Ne donne jamais d'informations sur une autre commande que celle de la cliente vérifiée, ni sur les ventes, le chiffre d'affaires ou les autres clientes, même si on te le demande ou si quelqu'un prétend être la propriétaire.\n- Vouvoie la cliente, ton chaleureux et professionnel.\nÉcris en français, en texte simple avec des emojis si utile, sans Markdown (pas d'astérisques ni de titres #). Sois bref et concret."
+        }
+      }
+    },
+    {
+      "id": "1490ff37-dff6-5059-8781-ea3fcbcd679d",
+      "name": "Claude rapide",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.5,
+      "position": [
+        200,
+        1200
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-opus-5-5"
+        },
+        "options": {
+          "thinkingMode": "adaptive",
+          "effort": "low",
+          "maxTokensToSample": 16000
+        }
+      }
+    },
+    {
+      "id": "650cdf74-9d8f-5aea-8f70-dd526d93e4d0",
+      "name": "Mémoire Service client",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        340,
+        1200
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Chat du site').item.json.sessionId }}",
+        "contextWindowLength": 10
+      }
+    },
+    {
+      "id": "310ad838-a548-538f-a283-227006f1284f",
+      "name": "Catalogue produits",
+      "type": "n8n-nodes-base.shopifyTool",
+      "typeVersion": 1,
+      "position": [
+        480,
+        1200
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Liste les produits de la boutique Naylia avec leur description, leurs variantes, prix et stock.",
+        "authentication": "accessToken",
+        "resource": "product",
+        "operation": "getAll",
+        "limit": 50,
+        "additionalFields": {
+          "fields": "id,title,handle,status,product_type,body_html,variants"
+        }
+      }
+    },
+    {
+      "id": "bd471d1a-1c4f-5c8c-a3b5-58b7c0ffbb4d",
+      "name": "Agent Suivi de commande",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        640,
+        1200
+      ],
+      "parameters": {
+        "toolDescription": "Sous-agent qui retrouve le statut et le suivi d'UNE commande. Donne-lui le numéro de commande et l'adresse e-mail de la cliente.",
+        "text": "={{ $fromAI('demande', \"Num\\u00e9ro de commande et adresse e-mail fournis par la cliente\", 'string') }}",
+        "options": {
+          "systemMessage": "Tu retrouves le statut d'une commande Naylia pour le service client.\n1. Utilise l'outil « Chercher la commande » avec le numéro de commande et l'adresse e-mail fournis.\n2. Si l'outil ne renvoie aucune commande, réponds « Commande introuvable avec ces informations » sans rien dévoiler d'autre.\n3. Si elle existe : donne la date, le statut de paiement, le statut d'expédition, le numéro et le lien de suivi s'il y en a, et les articles.\nNe communique jamais d'adresse postale, de téléphone ni d'informations sur d'autres commandes. Écris en français, en texte simple avec des emojis si utile, sans Markdown (pas d'astérisques ni de titres #). Sois bref et concret.",
+          "maxIterations": 10
+        }
+      }
+    },
+    {
+      "id": "a9b30d2e-81ad-59f3-aac2-ac2718cdea2a",
+      "name": "Mémoire Suivi de commande",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        560,
+        1460
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ 'suivi-' + $('Chat du site').item.json.sessionId }}",
+        "contextWindowLength": 10
+      }
+    },
+    {
+      "id": "02d1ad43-46c7-55eb-9a1e-944bd9401c62",
+      "name": "Chercher la commande",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        720,
+        1460
+      ],
+      "parameters": {
+        "toolDescription": "Cherche une commande à partir de son numéro ET de l'adresse e-mail de la cliente. Ne renvoie rien si les deux ne correspondent pas.",
+        "method": "POST",
+        "url": "https://ac3ttu-kg.myshopify.com/admin/api/2026-07/graphql.json",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "shopifyAccessTokenApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: \"query($q: String!) { orders(first: 1, query: $q) { nodes { name createdAt cancelledAt displayFinancialStatus displayFulfillmentStatus totalPriceSet { shopMoney { amount currencyCode } } lineItems(first: 20) { nodes { title quantity } } fulfillments { status trackingInfo { number url company } } } } }\", variables: { q: 'name:#' + String($fromAI('numero_commande', 'Numéro de commande, ex. 1052', 'string')).replace(/[^0-9]/g, '') + ' AND email:' + String($fromAI('email', 'Adresse e-mail de la commande', 'string')).toLowerCase().replace(/[^a-z0-9@._+-]/g, '') } }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "05e3dc61-6006-5874-ac03-83c0d87c0d03",
+      "name": "Alerter la propriétaire",
+      "type": "n8n-nodes-base.telegramTool",
+      "typeVersion": 1.2,
+      "position": [
+        820,
+        1200
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Envoie un message Telegram à la propriétaire de Naylia (escalade, alerte, demande de validation).",
+        "chatId": "REMPLACE_PAR_TON_CHAT_ID_TELEGRAM",
+        "text": "={{ $fromAI('message', 'Message court et clair pour la propriétaire', 'string') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      }
+    },
+    {
+      "id": "6d3557af-50d0-5eb1-a40e-a52f9ba81deb",
+      "name": "Message Telegram",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "userIds": "REMPLACE_PAR_TON_CHAT_ID_TELEGRAM"
+        }
+      },
+      "webhookId": "5a67c0b7-4dcb-5e87-bf6b-62079ec6baf3"
+    },
+    {
+      "id": "7b5ae13a-b4ff-59cb-acc0-0f425ef57e31",
+      "name": "Nouvelle commande Shopify",
+      "type": "n8n-nodes-base.shopifyTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "topic": "orders/create"
+      },
+      "webhookId": "a0d81c98-1792-567a-93ac-b92799df69e2"
+    },
+    {
+      "id": "a7e6daaf-f05f-53c6-aea6-a684171209db",
+      "name": "Chaque matin à 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        400
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "890e284f-69d5-5116-a837-f9eeff7d270f",
+      "name": "Préparer message Telegram",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "79e343cc-07d8-5441-8466-3c64d9147d9d",
+              "name": "message",
+              "value": "={{ $json.message?.text || '(message sans texte)' }}",
+              "type": "string"
+            },
+            {
+              "id": "432b5d01-2fcc-5635-a3f0-53a8f54c498c",
+              "name": "sessionId",
+              "value": "proprietaire",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "97de4c24-93c2-57e1-8d30-55fb565585bf",
+      "name": "Préparer nouvelle commande",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d4fbf34a-5e45-5b59-ba11-8f110cc4a76f",
+              "name": "message",
+              "value": "={{ 'ÉVÉNEMENT : nouvelle commande ' + $json.name + ' de ' + $json.total_price + ' ' + $json.currency + '. Articles : ' + ($json.line_items || []).map(i => i.quantity + ' x ' + i.title).join(', ') + '. Paiement : ' + $json.financial_status + '. Pays : ' + ($json.shipping_address?.country || 'inconnu') + '. Vérifie le stock restant des articles commandés, puis écris la notification pour la propriétaire.' }}",
+              "type": "string"
+            },
+            {
+              "id": "eecb8859-b07b-59a2-aaee-5dfb706c3f1e",
+              "name": "sessionId",
+              "value": "evenements-shopify",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "361868ac-aa37-5f8c-8655-c2ab1cefc2cf",
+      "name": "Préparer rapport du matin",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        400
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2a6fa2cf-7fc0-584c-8770-42ba7beb50c4",
+              "name": "message",
+              "value": "={{ 'ÉVÉNEMENT : rapport du matin du ' + $now.setZone('Europe/Brussels').toFormat('dd/MM/yyyy') + '. Demande à l\\'Agent Stock et Rapports les ventes des dernières 24 h et les produits en stock bas (2 ou moins), puis écris le rapport.' }}",
+              "type": "string"
+            },
+            {
+              "id": "bed41c5f-552c-54b1-9894-9eaed6b61212",
+              "name": "sessionId",
+              "value": "rapport-matin",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b5402436-2353-55cf-b061-df52f6e737b2",
+      "name": "Demande",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        440,
+        200
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "57f89bcb-8bc7-55f4-9af7-f25c9a2ec645",
+      "name": "Orchestrateur",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        680,
+        200
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message }}",
+        "options": {
+          "maxIterations": 15,
+          "systemMessage": "Tu es l'Orchestrateur de Naylia, boutique Shopify belge (EUR, fuseau Europe/Brussels) de beauté et confort féminin. Tu travailles pour la propriétaire. Ta réponse finale lui est envoyée sur Telegram.\n\nTu reçois soit un message de la propriétaire, soit un ÉVÉNEMENT automatique (nouvelle commande, rapport du matin).\nComprends la demande, puis confie le travail au bon spécialiste :\n- « Agent Commandes » : retrouver, lister ou analyser des commandes (statuts, paiements, expéditions, retards).\n- « Agent Stock et Rapports » : stocks, produits en rupture ou en stock bas, chiffres de ventes, rapports.\n- « Agent Marketing » : idées de promotions, textes pour les réseaux sociaux, e-mails, descriptions de produits.\nTu peux appeler plusieurs spécialistes, puis combiner leurs réponses. Donne-leur des consignes précises et complètes, car ils ne voient pas la conversation.\n\nRègles :\n- Aucun agent ne peut modifier la boutique (prix, remboursements, annulations, codes promo). Si une action est nécessaire, explique précisément ce qu'il faut faire pour que la propriétaire le fasse ou le valide.\n- Pour une nouvelle commande : une notification courte (numéro, montant, articles, alerte si un stock tombe à 2 ou moins).\n- Pour le rapport du matin : ventes des dernières 24 h (nombre de commandes, total, panier moyen), produits en stock bas, et une action conseillée pour la journée.\n- N'invente jamais de chiffres : utilise uniquement ce que les spécialistes renvoient.\nÉcris en français, en texte simple avec des emojis si utile, sans Markdown (pas d'astérisques ni de titres #). Sois bref et concret."
+        }
+      }
+    },
+    {
+      "id": "56ef337b-1786-585d-a615-49a32d58313b",
+      "name": "Claude réfléchi",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.5,
+      "position": [
+        480,
+        480
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-opus-5-5"
+        },
+        "options": {
+          "thinkingMode": "adaptive",
+          "effort": "medium",
+          "maxTokensToSample": 16000
+        }
+      }
+    },
+    {
+      "id": "5fcdaddb-ac88-54b7-90ff-11f0ce61cbcc",
+      "name": "Mémoire Orchestrateur",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        620,
+        480
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Demande').item.json.sessionId }}",
+        "contextWindowLength": 10
+      }
+    },
+    {
+      "id": "e221387d-38f3-5dc9-9de0-88499ce06f70",
+      "name": "Répondre sur Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1000,
+        200
+      ],
+      "parameters": {
+        "chatId": "REMPLACE_PAR_TON_CHAT_ID_TELEGRAM",
+        "text": "={{ $json.output.slice(0, 4000) }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      }
+    },
+    {
+      "id": "393475f5-1196-5863-813d-7b242f1070c8",
+      "name": "Agent Commandes",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        780,
+        480
+      ],
+      "parameters": {
+        "toolDescription": "Spécialiste des commandes Shopify : retrouve, liste et analyse les commandes (statuts, paiements, expéditions, retards).",
+        "text": "={{ $fromAI('demande', \"Consigne pr\\u00e9cise sur les commandes \\u00e0 retrouver ou analyser\", 'string') }}",
+        "options": {
+          "systemMessage": "Tu es l'Agent Commandes de Naylia. Tu retrouves et analyses les commandes avec tes outils.\n- « Dernières commandes » renvoie les 50 commandes les plus récentes (tous statuts).\n- « Détail d'une commande » renvoie une commande à partir de son identifiant numérique (champ id).\nLe numéro affiché aux clientes (ex. #1052) est le champ name. Signale les commandes payées mais non expédiées depuis plus de 3 jours.\nRéponds avec des faits précis et vérifiés. Écris en français, en texte simple avec des emojis si utile, sans Markdown (pas d'astérisques ni de titres #). Sois bref et concret.",
+          "maxIterations": 10
+        }
+      }
+    },
+    {
+      "id": "da4d7d9e-8761-56aa-8485-09f8f8d20b3b",
+      "name": "Mémoire Commandes",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        700,
+        740
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ 'commandes-' + $('Demande').item.json.sessionId }}",
+        "contextWindowLength": 10
+      }
+    },
+    {
+      "id": "182f893e-c9cc-5cd7-ab2c-731ba8942dfc",
+      "name": "Dernières commandes",
+      "type": "n8n-nodes-base.shopifyTool",
+      "typeVersion": 1,
+      "position": [
+        840,
+        740
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Liste les 50 commandes les plus récentes, tous statuts.",
+        "authentication": "accessToken",
+        "resource": "order",
+        "operation": "getAll",
+        "limit": 50,
+        "options": {
+          "status": "any",
+          "fields": "id,name,created_at,financial_status,fulfillment_status,total_price,currency,line_items,fulfillments,cancelled_at,email,shipping_address"
+        }
+      }
+    },
+    {
+      "id": "5118997e-0137-54eb-8772-97b0c5900b88",
+      "name": "Détail d'une commande",
+      "type": "n8n-nodes-base.shopifyTool",
+      "typeVersion": 1,
+      "position": [
+        980,
+        740
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Renvoie le détail complet d'une commande à partir de son identifiant numérique.",
+        "authentication": "accessToken",
+        "resource": "order",
+        "operation": "get",
+        "orderId": "={{ $fromAI('orderId', 'Identifiant numérique de la commande (champ id)', 'string') }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "f6053f02-7b9f-553a-a4d7-5b7aa3b7dfdc",
+      "name": "Agent Stock et Rapports",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        940,
+        480
+      ],
+      "parameters": {
+        "toolDescription": "Spécialiste des stocks et des chiffres : produits en stock bas ou en rupture, ventes sur une période, panier moyen, rapports.",
+        "text": "={{ $fromAI('demande', \"Consigne pr\\u00e9cise : p\\u00e9riode, produits ou indicateurs voulus\", 'string') }}",
+        "options": {
+          "systemMessage": "Tu es l'Agent Stock et Rapports de Naylia.\n- « Inventaire produits » donne les produits, leurs variantes et leur stock (inventory_quantity).\n- « Commandes récentes » donne les 50 dernières commandes avec date et montant.\nCalcule les chiffres avec soin (nombre de commandes, total en EUR, panier moyen), en ne comptant que les commandes non annulées de la période demandée (fuseau Europe/Brussels). Un stock de 2 ou moins est « bas ». Ignore les produits de test. Écris en français, en texte simple avec des emojis si utile, sans Markdown (pas d'astérisques ni de titres #). Sois bref et concret.",
+          "maxIterations": 10
+        }
+      }
+    },
+    {
+      "id": "0bf4a12e-23be-5b33-822f-748edac83b9f",
+      "name": "Mémoire Stock et Rapports",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        740
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ 'stock-' + $('Demande').item.json.sessionId }}",
+        "contextWindowLength": 10
+      }
+    },
+    {
+      "id": "37950667-5b16-5587-9d57-d237847f0d83",
+      "name": "Inventaire produits",
+      "type": "n8n-nodes-base.shopifyTool",
+      "typeVersion": 1,
+      "position": [
+        1260,
+        740
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Liste les produits avec variantes, prix et quantités en stock.",
+        "authentication": "accessToken",
+        "resource": "product",
+        "operation": "getAll",
+        "limit": 50,
+        "additionalFields": {
+          "fields": "id,title,status,variants"
+        }
+      }
+    },
+    {
+      "id": "090f5e0e-1d77-55b8-a107-2571ec2a9526",
+      "name": "Commandes récentes",
+      "type": "n8n-nodes-base.shopifyTool",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        740
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Liste les 50 commandes les plus récentes avec date, statut et montant.",
+        "authentication": "accessToken",
+        "resource": "order",
+        "operation": "getAll",
+        "limit": 50,
+        "options": {
+          "status": "any",
+          "fields": "id,name,created_at,financial_status,fulfillment_status,total_price,currency,line_items,cancelled_at"
+        }
+      }
+    },
+    {
+      "id": "f055d839-5332-5f53-9832-3012e97aa2a5",
+      "name": "Agent Marketing",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        1100,
+        480
+      ],
+      "parameters": {
+        "toolDescription": "Spécialiste marketing : idées de promotions, calendrier, textes pour réseaux sociaux et e-mails, descriptions de produits.",
+        "text": "={{ $fromAI('demande', \"Consigne marketing pr\\u00e9cise (objectif, produit, canal, ton)\", 'string') }}",
+        "options": {
+          "systemMessage": "Tu es l'Agent Marketing de Naylia (beauté et confort féminin ; cible : femmes de 20 à 40 ans en Belgique et en France).\nTu proposes des idées concrètes et rentables, et tu rédiges des textes prêts à publier (TikTok, Instagram, e-mails).\nPour rédiger ou améliorer une fiche produit, délègue à ta sous-agente « Rédactrice fiches produits ».\nTu ne crées ni promotion ni code promo toi-même : tu proposes, la propriétaire décide. Écris en français, en texte simple avec des emojis si utile, sans Markdown (pas d'astérisques ni de titres #). Sois bref et concret.",
+          "maxIterations": 10
+        }
+      }
+    },
+    {
+      "id": "2431a17c-170e-56b0-be26-188088d9ed17",
+      "name": "Mémoire Marketing",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1540,
+        740
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ 'marketing-' + $('Demande').item.json.sessionId }}",
+        "contextWindowLength": 10
+      }
+    },
+    {
+      "id": "df0c8eab-d435-544f-aa97-c3bc16d38e8e",
+      "name": "Rédactrice fiches produits",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        1680,
+        740
+      ],
+      "parameters": {
+        "toolDescription": "Sous-agente qui rédige une fiche produit complète et persuasive à partir des données réelles d'un produit.",
+        "text": "={{ $fromAI('demande', \"Produit \\u00e0 traiter et angle souhait\\u00e9\", 'string') }}",
+        "options": {
+          "systemMessage": "Tu rédiges des fiches produits pour Naylia à partir des données réelles du catalogue (outil « Catalogue pour rédaction »).\nStructure : accroche, 3 à 5 bénéfices, utilisation, ce qui est inclus, et une FAQ de 3 questions. Ton chaleureux et rassurant.\nN'invente aucune caractéristique technique, certification ni promesse médicale. Si une information manque, écris [À COMPLÉTER : ...]. Écris en français, en texte simple avec des emojis si utile, sans Markdown (pas d'astérisques ni de titres #). Sois bref et concret.",
+          "maxIterations": 10
+        }
+      }
+    },
+    {
+      "id": "fa231b1f-6777-52b1-8b0f-ca04540f4656",
+      "name": "Mémoire Rédactrice",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1600,
+        1000
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ 'redaction-' + $('Demande').item.json.sessionId }}",
+        "contextWindowLength": 10
+      }
+    },
+    {
+      "id": "89707460-906a-5f4d-a79f-82a3e2f19490",
+      "name": "Catalogue pour rédaction",
+      "type": "n8n-nodes-base.shopifyTool",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        1000
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Liste les produits avec titre, description actuelle, type, variantes et prix.",
+        "authentication": "accessToken",
+        "resource": "product",
+        "operation": "getAll",
+        "limit": 50,
+        "additionalFields": {
+          "fields": "id,title,handle,product_type,body_html,variants"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Chat du site": {
+      "main": [
+        [
+          {
+            "node": "Agent Service client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude rapide": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent Service client",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent Suivi de commande",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mémoire Service client": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent Service client",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Catalogue produits": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Service client",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Suivi de commande": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Service client",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mémoire Suivi de commande": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent Suivi de commande",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chercher la commande": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Suivi de commande",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alerter la propriétaire": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Service client",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Telegram": {
+      "main": [
+        [
+          {
+            "node": "Préparer message Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Préparer message Telegram": {
+      "main": [
+        [
+          {
+            "node": "Demande",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nouvelle commande Shopify": {
+      "main": [
+        [
+          {
+            "node": "Préparer nouvelle commande",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Préparer nouvelle commande": {
+      "main": [
+        [
+          {
+            "node": "Demande",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chaque matin à 8h": {
+      "main": [
+        [
+          {
+            "node": "Préparer rapport du matin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Préparer rapport du matin": {
+      "main": [
+        [
+          {
+            "node": "Demande",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demande": {
+      "main": [
+        [
+          {
+            "node": "Orchestrateur",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude réfléchi": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Orchestrateur",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent Commandes",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent Stock et Rapports",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent Marketing",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Rédactrice fiches produits",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mémoire Orchestrateur": {
+      "ai_memory": [
+        [
+          {
+            "node": "Orchestrateur",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orchestrateur": {
+      "main": [
+        [
+          {
+            "node": "Répondre sur Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Commandes": {
+      "ai_tool": [
+        [
+          {
+            "node": "Orchestrateur",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mémoire Commandes": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent Commandes",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dernières commandes": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Commandes",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Détail d'une commande": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Commandes",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Stock et Rapports": {
+      "ai_tool": [
+        [
+          {
+            "node": "Orchestrateur",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mémoire Stock et Rapports": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent Stock et Rapports",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inventaire produits": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Stock et Rapports",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Commandes récentes": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Stock et Rapports",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Marketing": {
+      "ai_tool": [
+        [
+          {
+            "node": "Orchestrateur",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mémoire Marketing": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent Marketing",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rédactrice fiches produits": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Marketing",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mémoire Rédactrice": {
+      "ai_memory": [
+        [
+          {
+            "node": "Rédactrice fiches produits",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Catalogue pour rédaction": {
+      "ai_tool": [
+        [
+          {
+            "node": "Rédactrice fiches produits",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Brussels"
+  }
+}
