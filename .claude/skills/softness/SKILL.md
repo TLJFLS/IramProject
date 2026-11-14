@@ -30,11 +30,19 @@ Options :
 
 Lancer le rendu complet en arrière-plan. Prérequis : `pip install bpy` (Blender 5.x), `ffmpeg`, Pillow, numpy.
 
+## Son
+
+Uniquement des **chocs creux et résonnants** (comme un objet vide en verre / plastique dur) à chaque impact et
+rebond, plus étouffés et graves quand c'est mou, et un choc sourd quand la capsule tombe au fond du trou.
+**Aucun bruit de machine** (pas de scies, pas de cliquetis d'engrenages, pas de grincement) : choix de l'utilisateur.
+Pour changer le son d'une vidéo déjà rendue sans refaire la 3D :
+`python3 .claude/skills/softness/scripts/softness.py --game <jeu> [--steps …] --remux videos/softness/x.mp4`
+
 ## Comportement (jeu `scies`)
 
-- 0–20 % : la capsule rebondit sur les scies puis reste posée en vibrant (grincement métallique).
+- 0–20 % : la capsule rebondit sur les scies puis reste posée en vibrant.
 - 30–50 % : elle s'écrase, une partie passe sous les scies et reste coincée (bulle de plus en plus grosse).
-- 60–100 % : elle se faufile comme de la pâte entre les scies et tombe dans le trou, de plus en plus vite (plouf).
+- 60–100 % : elle se faufile comme de la pâte entre les scies et tombe dans le trou, de plus en plus vite.
 
 Jeu `tube` : 0 % rebondit et reste posée sur le tube ; 20 % entre à peine ; 50 % à mi-chemin ; 75 % presque en bas ;
 100 % traverse entièrement et disparaît dans le socle.

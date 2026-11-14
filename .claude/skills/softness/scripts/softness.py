@@ -586,66 +586,69 @@ def overlay(frame, s, W=1080, H=1920):
     return img.convert("RGB")
 
 
+def impacts(s):
+    """Instants (s) et forces (0..1) des chocs de la capsule pour la softness s, calés sur state()."""
+    g = 9.8
+    t_hit = math.sqrt(2 * 1.25 / g)
+    hits = [(t_hit, 1.0 - 0.55 * s)]
+    hard = 0.1 if GAME == "tube" else 0.25
+    if s < hard:  # rebonds : un choc à chaque retombée
+        h = (hard - s) * 1.9
+        h0, t = h, t_hit
+        while h > 0.004:
+            t += 2 * math.sqrt(2 * h / g)
+            h *= 0.42 ** 2
+            if h > 0.004:
+                hits.append((t, (1.0 - 0.55 * s) * math.sqrt(h / h0) * 0.8))
+    # choc sourd au fond du trou quand la capsule passe entièrement
+    if GAME == "tube" and s >= 0.95:
+        hits.append((t_hit + 1 / 0.9 + 0.12 + 0.55, 0.35))
+    elif GAME != "tube" and s >= 0.55:
+        hits.append((t_hit + 1 / (0.6 + 2.6 * (s - 0.55)) + 0.12 + 0.45, 0.35))
+    return hits
+
+
+def hollow_hit(strength, softness, sr, rng):
+    """Son creux et résonnant, comme un objet vide (verre / plastique dur) qui tape."""
+    L = int(1.2 * sr)
+    t = np.arange(L) / sr
+    f0 = 820 - 380 * softness                       # plus mou = plus grave
+    damp = 1.0 + 1.8 * softness                     # plus mou = plus étouffé
+    out = np.zeros(L)
+    for ratio, amp, dec in ((0.5, 0.9, 7), (1.0, 1.0, 9), (2.32, 0.45, 14), (4.25, 0.22, 22), (6.63, 0.1, 30)):
+        f = f0 * ratio * (1 + rng.uniform(-0.01, 0.01))
+        out += amp * np.sin(2 * np.pi * f * t + rng.uniform(0, 6.28)) * np.exp(-t * dec * damp)
+    click = rng.standard_normal(L) * np.exp(-t * 900) * 0.6   # petite attaque
+    out = (out * 0.35 + click) * strength
+    return out
+
+
 def soundtrack(steps, seconds, sr=44100):
-    """Scies qui tournent + impacts + « squish » + plouf, synthétisés."""
-    n = int(len(steps) * seconds * sr)
-    t = np.arange(n) / sr
-    rng = np.random.default_rng(1)
-    noise = rng.standard_normal(n)
-    def lowpass(x, a):
-        y = np.empty_like(x)
-        acc = 0.0
-        for i in range(0, len(x), 1):
-            acc += a * (x[i] - acc)
-            y[i] = acc
-        return y
-    hum = 0.05 * (np.sin(2 * np.pi * 190 * t) + 0.5 * np.sin(2 * np.pi * 380 * t + 1) + 0.25 * np.sin(2 * np.pi * 760 * t))
-    hum *= 0.8 + 0.2 * np.sin(2 * np.pi * 3 * t)
-    whir = np.convolve(noise, np.ones(8) / 8, mode="same") * 0.03
-    out = hum + whir if GAME == "scies" else whir * 0.3
-    if GAME == "engrenages":  # cliquetis des dents
-        clicks = np.zeros(n)
-        L = int(0.012 * sr)
-        for k0 in range(0, n - L, int(sr / 11)):
-            clicks[k0:k0 + L] += noise[k0:k0 + L] * np.exp(-np.arange(L) / (0.003 * sr)) * 0.25
-        out = out + clicks
-    t_hit = math.sqrt(2 * 1.25 / 9.8)
+    """Uniquement des chocs creux et résonnants (aucun bruit de machine), avec un peu d'écho de pièce."""
+    n = int(len(steps) * seconds * sr) + sr
+    out = np.zeros(n)
+    rng = np.random.default_rng(3)
     for i, s in enumerate(steps):
-        base = i * seconds
-        # impact
-        k0 = int((base + t_hit) * sr)
-        L = int(0.4 * sr)
-        tt = np.arange(L) / sr
-        freq = 520 - 420 * s
-        thud = (np.sin(2 * np.pi * freq * tt) * np.exp(-tt * (30 - 18 * s)) * (0.5 + 0.3 * (1 - s))
-                + noise[:L] * np.exp(-tt * 60) * 0.15)
-        seg = out[k0:k0 + L]
-        seg += thud[:len(seg)]
-        if s < 0.25 and GAME == "scies":  # grincement métal sur métal
-            k1 = int((base + t_hit + 0.6) * sr)
-            L2 = int((seconds - t_hit - 0.7) * sr)
-            tt2 = np.arange(L2) / sr
-            grind = (noise[k1:k1 + L2] - np.convolve(noise[k1:k1 + L2], np.ones(4) / 4, mode="same")) * 0.12
-            grind *= 0.6 + 0.4 * np.sin(2 * np.pi * 9 * tt2) ** 2
-            out[k1:k1 + L2] += grind[:len(out[k1:k1 + L2])]
-        elif s >= (0.1 if GAME == "tube" else 0.25):  # squish
-            dur = 0.5 if s < 0.55 else max(0.25, 1.0 / (0.6 + 2.6 * (s - 0.55)))
-            if GAME == "tube":
-                dur = 1.1
-            k1 = int((base + t_hit + 0.1) * sr)
-            L2 = int(dur * sr)
-            tt2 = np.arange(L2) / sr
-            sq = np.convolve(noise[k1:k1 + L2], np.ones(24) / 24, mode="same") * 1.2
-            sq *= np.sin(np.pi * tt2 / dur) * (0.6 + 0.4 * np.sin(2 * np.pi * 14 * tt2))
-            out[k1:k1 + L2] += sq[:len(out[k1:k1 + L2])]
-            if s >= (0.95 if GAME == "tube" else 0.55):  # plouf dans le trou
-                k2 = k1 + L2 + int(0.25 * sr)
-                L3 = int(0.35 * sr)
-                tt3 = np.arange(L3) / sr
-                plop = np.sin(2 * np.pi * (380 - 500 * tt3) * tt3) * np.exp(-tt3 * 14) * 0.45
-                out[k2:k2 + L3] += plop[:len(out[k2:k2 + L3])]
+        for t_hit, strength in impacts(s):
+            k = int((i * seconds + t_hit) * sr)
+            snd = hollow_hit(strength, s, sr, rng)
+            out[k:k + len(snd)] += snd[:max(0, n - k)]
+    # réverbération légère (réponse impulsionnelle de bruit qui décroît)
+    L = int(0.7 * sr)
+    ir = rng.standard_normal(L) * np.exp(-np.arange(L) / sr * 7)
+    ir = np.convolve(ir, np.ones(6) / 6, mode="same")
+    wet = np.fft.irfft(np.fft.rfft(out, 2 * n) * np.fft.rfft(ir, 2 * n))[:n]
+    out = out + wet / max(1e-9, np.abs(wet).max()) * np.abs(out).max() * 0.18
+    out = out[:int(len(steps) * seconds * sr)]
     out /= max(1e-6, np.abs(out).max()) / 0.85
     return (out * 32767).astype(np.int16), sr
+
+
+def write_audio(steps, seconds, path):
+    audio, sr = soundtrack(steps, seconds)
+    with wave.open(path, "wb") as wf:
+        wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(sr)
+        wf.writeframes(audio.tobytes())
 
 
 def main():
@@ -661,6 +664,7 @@ def main():
     ap.add_argument("--samples", type=int, default=8)
     ap.add_argument("--res", default="540x960")
     ap.add_argument("--test", action="store_true", help="rend 3 images de contrôle")
+    ap.add_argument("--remux", help="vidéo déjà rendue : remplace seulement son son (mêmes --game/--steps/--seconds)")
     a = ap.parse_args()
     res = tuple(int(v) for v in a.res.split("x"))
     global STYLE
@@ -668,6 +672,17 @@ def main():
     if a.objet == "bille":
         init_object(0.6, 1.2)
     set_game(a.game)
+    if a.remux:
+        tmp = tempfile.mkdtemp()
+        apath = os.path.join(tmp, "a.wav")
+        write_audio([int(v) / 100 for v in a.steps.split(",")], a.seconds, apath)
+        out = a.out if a.out != ap.get_default("out") else a.remux
+        tmpv = os.path.join(tmp, "v.mp4")
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", a.remux, "-i", apath, "-map", "0:v", "-map", "1:a",
+                        "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-shortest", tmpv], check=True)
+        os.replace(tmpv, out)
+        print("Son remplacé :", out)
+        return
     steps = [int(v) / 100 for v in a.steps.split(",")]
     color = COLORS.get(a.color, COLORS["bleu"])
     cap, blades = build_scene(color, res, a.samples)
@@ -700,11 +715,8 @@ def main():
         print(f"  {int(s * 100)} % ok", flush=True)
     enc.stdin.close()
     enc.wait()
-    audio, sr = soundtrack(steps, a.seconds)
     apath = os.path.join(tmp, "a.wav")
-    with wave.open(apath, "wb") as wf:
-        wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(sr)
-        wf.writeframes(audio.tobytes())
+    write_audio(steps, a.seconds, apath)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", silent, "-i", apath, "-c:v", "copy", "-c:a", "aac",
                     "-b:a", "160k", "-shortest", a.out], check=True)
     print("Vidéo prête :", a.out)
