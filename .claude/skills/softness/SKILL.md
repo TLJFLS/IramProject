@@ -23,7 +23,7 @@ Options :
   rayons de lumière, texte noir « XX% SOFT ») ; défaut `marbre` pour `engrenages`, `rose` sinon.
   **Alterner les jeux** d'une vidéo à l'autre pour varier le contenu.
 - `--color` : `bleu` (défaut), `rouge`, `vert`, `jaune`, `rose`, `violet`, `orange`, `chrome`, `or` → varier.
-- `--steps` : paliers en %, défaut **`0,20,50,75,100`** (choix de l'utilisateur : ~14 s de vidéo, ~30 min de rendu).
+- `--steps` : paliers en %, **toujours `0,20,50,75,100`** (exigence de l'utilisateur : jamais tous les 10 %). ~14 s de vidéo, ~30 min de rendu.
   Ne mettre d'autres paliers que si l'utilisateur le demande.
 - `--seconds 2.8` (durée par essai), `--fps 24`, `--samples 8`, `--res 540x960` (agrandi en 1080x1920).
 - `--test` : 3 images de contrôle (0 %, 50 %, 100 %) en ~1 min, à faire après toute modification.
