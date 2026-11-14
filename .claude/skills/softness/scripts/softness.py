@@ -623,6 +623,46 @@ def hollow_hit(strength, softness, sr, rng):
     return out
 
 
+def slide_sound(s, seconds, sr, rng):
+    """Glissement doux pendant que la capsule coulisse à travers l'obstacle vers le trou.
+    Volume = vitesse de passage (df/dt) ; bruit filtré dont la hauteur descend pendant la glissade."""
+    n = int(seconds * sr)
+    tt = np.linspace(0, seconds, 400)
+    f = np.array([state(s, t)["f"] for t in tt])
+    drop = np.array([state(s, t)["drop"] for t in tt])
+    speed = np.gradient(f, tt) + 0.6 * np.clip(np.gradient(drop, tt), 0, None) * (drop < 1.6)
+    speed = np.clip(speed, 0, None)
+    if speed.max() < 1e-3:
+        return np.zeros(n)
+    env = np.interp(np.arange(n) / sr, tt, speed)
+    env = np.convolve(env, np.ones(800) / 800, mode="same")
+    env = env / max(env.max(), 1e-9) * min(1.0, 0.35 + speed.max() * 0.25)
+    # filtre passe-bande dont la fréquence glisse vers le grave (de ~2200 Hz à ~700 Hz)
+    noise = rng.standard_normal(n)
+    out = np.zeros(n)
+    active = np.where(env > 0.01)[0]
+    if not len(active):
+        return out
+    i0, i1 = active[0], active[-1]
+    y1 = y2 = x1 = x2 = 0.0
+    q = 6.0
+    for i in range(i0, i1 + 1):
+        prog = (i - i0) / max(1, i1 - i0)
+        fc = 2200 - 1500 * prog
+        w0 = 2 * math.pi * fc / sr
+        alpha = math.sin(w0) / (2 * q)
+        b0, a0, a1, a2 = alpha, 1 + alpha, -2 * math.cos(w0), 1 - alpha
+        x0 = noise[i] * env[i]
+        y0 = (b0 * x0 - b0 * x2 - a1 * y1 - a2 * y2) / a0
+        x2, x1, y2, y1 = x1, x0, y1, y0
+        out[i] = y0
+    # léger souffle tonal qui descend (sensation de coulisse)
+    t = np.arange(n) / sr
+    glide = np.sin(2 * np.pi * np.cumsum(420 - 180 * np.clip((np.arange(n) - i0) / max(1, i1 - i0), 0, 1)) / sr)
+    out += glide * env * 0.04
+    return out * 1.6
+
+
 def soundtrack(steps, seconds, sr=44100):
     """Uniquement des chocs creux et résonnants (aucun bruit de machine), avec un peu d'écho de pièce."""
     n = int(len(steps) * seconds * sr) + sr
@@ -633,6 +673,9 @@ def soundtrack(steps, seconds, sr=44100):
             k = int((i * seconds + t_hit) * sr)
             snd = hollow_hit(strength, s, sr, rng)
             out[k:k + len(snd)] += snd[:max(0, n - k)]
+        sl = slide_sound(s, seconds, sr, rng)
+        k = int(i * seconds * sr)
+        out[k:k + len(sl)] += sl[:max(0, n - k)]
     # réverbération légère (réponse impulsionnelle de bruit qui décroît)
     L = int(0.7 * sr)
     ir = rng.standard_normal(L) * np.exp(-np.arange(L) / sr * 7)

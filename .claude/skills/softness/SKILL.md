@@ -33,7 +33,9 @@ Lancer le rendu complet en arrière-plan. Prérequis : `pip install bpy` (Blende
 ## Son
 
 Uniquement des **chocs creux et résonnants** (comme un objet vide en verre / plastique dur) à chaque impact et
-rebond, plus étouffés et graves quand c'est mou, et un choc sourd quand la capsule tombe au fond du trou.
+rebond, plus étouffés et graves quand c'est mou, un **son de glissement** (souffle filtré qui descend vers le grave,
+volume = vitesse de passage) pendant que la capsule coulisse à travers l'obstacle vers le trou, et un choc sourd
+quand elle tombe au fond du trou.
 **Aucun bruit de machine** (pas de scies, pas de cliquetis d'engrenages, pas de grincement) : choix de l'utilisateur.
 Pour changer le son d'une vidéo déjà rendue sans refaire la 3D :
 `python3 .claude/skills/softness/scripts/softness.py --game <jeu> [--steps …] --remux videos/softness/x.mp4`
