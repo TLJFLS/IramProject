@@ -16,12 +16,14 @@
 ## Produits et coûts
 | Produit | Prix de vente | Coût d'achat unitaire | Remarque |
 |---|---|---|---|
-| Épilateur IPL Naylia™ | 149,90 € | À COMPLÉTER | produit phare |
+| Épilateur IPL Naylia™ | 149,90 € | 40 € | produit phare — FOCUS ACTUEL |
 | GUIDE - Peau lisse (e-book) | 14,99 € | ~0 € (digital) | cadeau idéal |
-| Soutien-gorge Minimisateur Naylia™ | 39,99 € | À COMPLÉTER | |
+
+> Soutien-gorge : retiré du focus (la propriétaire va le retirer ou le remplacer). Ne pas l'utiliser dans les offres.
+> Produit test (69,90 €) : à ignorer.
 
 ## Règles commerciales
 - Marge minimale par commande : À COMPLÉTER (par défaut, l'équipe garde au moins 40 % de marge brute)
-- Coût de livraison moyen : À COMPLÉTER (par défaut : 6 €)
+- Coût de livraison moyen : 5 à 6 € (calculer avec 6 €)
 - Seuil de livraison offerte actuel : À COMPLÉTER
 - Remise maximale acceptée : 20 %
