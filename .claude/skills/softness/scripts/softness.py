@@ -609,19 +609,18 @@ def impacts(s):
 
 
 def tok(strength, softness, sr, rng):
-    """Rebond « verre » : choc grave et résonnant, comme un bocal en verre épais qu'on tape (pas aigu).
-    Plus c'est mou, plus le choc devient sourd et rond."""
-    L = int(0.9 * sr)
+    """Rebond « verre » : un « ting » clair et pur, comme un morceau de verre qui tape (aucun son rauque).
+    Plus c'est mou, plus le ting est grave, court et étouffé."""
+    L = int(1.2 * sr)
     t = np.arange(L) / sr
-    f0 = 260 - 90 * softness                                   # fondamentale grave
-    out = np.zeros(L)
-    # partiels légèrement inharmoniques = timbre de verre, mais limités aux médiums
-    for ratio, amp, dec in ((1.0, 1.0, 5.5), (2.05, 0.38, 8), (3.6, 0.16, 12), (5.4, 0.05, 18)):
-        out += amp * np.sin(2 * np.pi * f0 * ratio * t + rng.uniform(0, 6.28)) * np.exp(-t * dec * (1 + 2.5 * softness))
-    thump = np.sin(2 * np.pi * (95 + 60 * np.exp(-t / 0.02)) * t) * np.exp(-t * 28)   # corps du choc
-    out = out * (1 - 0.6 * softness) + thump * (0.7 + 0.5 * softness)
-    env_in = np.clip(t / 0.0015, 0, 1)
-    return out * env_in * strength
+    f0 = 1250 - 450 * softness
+    dec = 4.5 * (1 + 3 * softness)
+    beat = 1 + 0.15 * np.cos(2 * np.pi * 3.2 * t)              # léger battement qui fait vivre la résonance
+    out = np.sin(2 * np.pi * f0 * t) * np.exp(-t * dec) * beat
+    out += 0.22 * np.sin(2 * np.pi * f0 * 2.71 * t) * np.exp(-t * dec * 2.5)   # harmonique de verre, discrète
+    out += 0.08 * np.sin(2 * np.pi * f0 * 5.15 * t) * np.exp(-t * dec * 4)
+    env_in = np.clip(t / 0.001, 0, 1)                          # attaque nette mais sans clic
+    return out * env_in * strength * (1 - 0.35 * softness)
 
 
 def bubble(f0, dur, amp, sr):
@@ -683,7 +682,7 @@ def soundtrack(steps, seconds, sr=44100):
         for j, (t_hit, strength) in enumerate(impacts(s)):
             if j and s >= 0.25:   # pas de « toc » au fond du trou : remplacé par le gloup
                 continue
-            snd = tok(0.95 * strength, s, sr, rng)
+            snd = tok(0.6 * strength, s, sr, rng)
             k = base + int(t_hit * sr)
             out[k:k + len(snd)] += snd[:max(0, n - k)]
         g = goo_sound(s, seconds, sr, rng)

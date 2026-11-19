@@ -33,8 +33,8 @@ Lancer le rendu complet en arrière-plan. Prérequis : `pip install bpy` (Blende
 ## Son
 
 Pensé comme les comptes « satisfying » : doux et propre, **aucun bruit de machine** (choix de l'utilisateur).
-- Chocs : rebond **grave et résonnant comme du verre épais**, assez fort (jamais aigu), à chaque rebond ;
-  plus sourd et rond quand c'est mou.
+- Chocs : **« ting » de verre clair et pur** (~1250 Hz, résonance qui sonne, aucun son rauque ni « boum »), à chaque rebond ;
+  plus grave, court et étouffé quand c'est mou.
 - Passage : son **gluant** (grosses bulles graves et lentes « glouup » + fond visqueux grave, volume selon la vitesse
   de passage), puis un gros « gloup » quand la capsule tombe dans le trou. Pas de souffle ni de bruit aigu.
 - Écho discret, niveau modéré avec limiteur doux. Réglages : `tok()`, `bubble()`, `goo_sound()`, `soundtrack()`.
