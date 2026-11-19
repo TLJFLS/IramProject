@@ -609,33 +609,34 @@ def impacts(s):
 
 
 def tok(strength, softness, sr, rng):
-    """Choc doux : « tok » de plastique creux quand c'est dur, « plop » rond quand c'est mou."""
-    L = int(0.35 * sr)
+    """Rebond « verre » : choc grave et résonnant, comme un bocal en verre épais qu'on tape (pas aigu).
+    Plus c'est mou, plus le choc devient sourd et rond."""
+    L = int(0.9 * sr)
     t = np.arange(L) / sr
-    f_start = 620 - 330 * softness
-    f_end = f_start * (0.72 - 0.1 * softness)
-    f = f_end + (f_start - f_end) * np.exp(-t / 0.018)          # petite chute de hauteur = son creux
-    ph = 2 * np.pi * np.cumsum(f) / sr
-    dec = 38 - 20 * softness
-    body = np.sin(ph) * np.exp(-t * dec)
-    body += 0.18 * np.sin(2.76 * ph) * np.exp(-t * dec * 2.2) * (1 - softness)   # léger timbre creux
-    attack = np.convolve(rng.standard_normal(L) * np.exp(-t * 1500), np.ones(12) / 12, mode="same") * 0.15
-    env_in = np.clip(t / 0.002, 0, 1)                            # attaque sans clic
-    return (body + attack) * env_in * strength
+    f0 = 260 - 90 * softness                                   # fondamentale grave
+    out = np.zeros(L)
+    # partiels légèrement inharmoniques = timbre de verre, mais limités aux médiums
+    for ratio, amp, dec in ((1.0, 1.0, 5.5), (2.05, 0.38, 8), (3.6, 0.16, 12), (5.4, 0.05, 18)):
+        out += amp * np.sin(2 * np.pi * f0 * ratio * t + rng.uniform(0, 6.28)) * np.exp(-t * dec * (1 + 2.5 * softness))
+    thump = np.sin(2 * np.pi * (95 + 60 * np.exp(-t / 0.02)) * t) * np.exp(-t * 28)   # corps du choc
+    out = out * (1 - 0.6 * softness) + thump * (0.7 + 0.5 * softness)
+    env_in = np.clip(t / 0.0015, 0, 1)
+    return out * env_in * strength
 
 
 def bubble(f0, dur, amp, sr):
-    """Une bulle de slime : sinusoïde dont la hauteur monte vite et qui s'éteint (« bloup »)."""
+    """Grosse bulle gluante : hauteur qui monte lentement (« glouup »), attaque douce, fin arrondie."""
     L = int(dur * sr)
     t = np.arange(L) / sr
-    f = f0 * (1 + 2.2 * t / dur)
-    env = np.clip(t / 0.004, 0, 1) * np.exp(-t / (dur * 0.35))
-    return np.sin(2 * np.pi * np.cumsum(f) / sr) * env * amp
+    f = f0 * (1 + 0.9 * (t / dur) ** 1.5)
+    env = np.sin(np.pi * np.clip(t / dur, 0, 1)) ** 1.5
+    tone = np.sin(2 * np.pi * np.cumsum(f) / sr) + 0.25 * np.sin(4 * np.pi * np.cumsum(f) / sr)
+    return tone * env * amp
 
 
 def goo_sound(s, seconds, sr, rng):
-    """Son gluant pendant que la capsule coule à travers l'obstacle : petites bulles « gloup » dont le nombre
-    suit la vitesse de passage, un fond de « squish » très doux, et un gros « gloup » quand elle tombe dans le trou."""
+    """Son gluant pendant que la capsule coule : grosses bulles graves et lentes + fond visqueux grave,
+    volume selon la vitesse de passage, et un gros « gloup » quand elle tombe dans le trou."""
     n = int(seconds * sr)
     out = np.zeros(n)
     tt = np.linspace(0, seconds, 600)
@@ -647,21 +648,25 @@ def goo_sound(s, seconds, sr, rng):
         return out
     speed_n = speed / speed.max()
     t = 0.0
-    while t < seconds:  # bulles : densité proportionnelle à la vitesse de passage
+    while t < seconds:  # bulles espacées, plus nombreuses quand ça coule vite
         v = float(np.interp(t, tt, speed_n))
-        t += rng.exponential(1 / (4 + 22 * v))
+        t += rng.uniform(0.07, 0.16) / (0.5 + 0.8 * v)
         v = float(np.interp(t, tt, speed_n))
-        if v < 0.08 or t >= seconds:
+        if v < 0.1 or t >= seconds:
             continue
-        f0 = rng.uniform(170, 420) * (1.1 - 0.3 * float(np.interp(t, tt, f)))
-        bb = bubble(f0, rng.uniform(0.035, 0.075), 0.22 * v * rng.uniform(0.6, 1.0), sr)
+        f0 = rng.uniform(85, 170) * (1.05 - 0.25 * float(np.interp(t, tt, f)))
+        bb = bubble(f0, rng.uniform(0.09, 0.17), 0.35 * (0.4 + 0.6 * v) * rng.uniform(0.7, 1.0), sr)
         k = int(t * sr)
         out[k:k + len(bb)] += bb[:max(0, n - k)]
-    env = np.interp(np.arange(n) / sr, tt, speed_n)          # fond « squish » très doux
-    out += np.convolve(rng.standard_normal(n), np.ones(60) / 60, mode="same") * env * 0.35
+    # fond visqueux : bruit très grave (< 200 Hz) qui « respire » lentement
+    env = np.interp(np.arange(n) / sr, tt, speed_n)
+    visc = np.convolve(rng.standard_normal(n), np.ones(220) / 220, mode="same")
+    visc = np.convolve(visc, np.ones(220) / 220, mode="same") * 9
+    wob = 0.6 + 0.4 * np.sin(2 * np.pi * 5 * np.arange(n) / sr)
+    out += visc * env * wob * 0.5
     if f[-1] > 0.999 and (drop > 0.02).any():               # gros « gloup » en tombant dans le trou
-        g1 = bubble(120, 0.24, 0.34, sr)
-        g2 = bubble(230, 0.10, 0.14, sr)
+        g1 = bubble(70, 0.32, 0.5, sr)
+        g2 = bubble(120, 0.18, 0.25, sr)
         g1[:len(g2)] += g2
         k = int(tt[np.argmax(drop > 0.02)] * sr) + int(0.25 * sr)
         out[k:k + len(g1)] += g1[:max(0, n - k)]
@@ -678,7 +683,7 @@ def soundtrack(steps, seconds, sr=44100):
         for j, (t_hit, strength) in enumerate(impacts(s)):
             if j and s >= 0.25:   # pas de « toc » au fond du trou : remplacé par le gloup
                 continue
-            snd = tok(0.55 * strength, s, sr, rng)
+            snd = tok(0.95 * strength, s, sr, rng)
             k = base + int(t_hit * sr)
             out[k:k + len(snd)] += snd[:max(0, n - k)]
         g = goo_sound(s, seconds, sr, rng)
@@ -688,9 +693,9 @@ def soundtrack(steps, seconds, sr=44100):
     ir = np.convolve(ir, np.ones(20) / 20, mode="same")
     wet = np.fft.irfft(np.fft.rfft(out, 2 * n) * np.fft.rfft(ir, 2 * n))[:n]
     out = out + wet / max(1e-9, np.abs(wet).max()) * np.abs(out).max() * 0.1
-    out = out - np.convolve(out, np.ones(400) / 400, mode="same")   # coupe-bas léger
+    out = out - np.convolve(out, np.ones(1200) / 1200, mode="same")   # coupe-bas très léger (< 40 Hz)
     out = out[:int(len(steps) * seconds * sr)]
-    out = out / max(1e-6, np.percentile(np.abs(out), 99.9)) * 0.45  # niveau modéré + limiteur doux
+    out = out / max(1e-6, np.percentile(np.abs(out), 99.95)) * 0.6  # niveau assez fort + limiteur doux
     out = np.tanh(out * 1.2) / np.tanh(1.2) * 0.75
     return (out * 32767).astype(np.int16), sr
 
