@@ -63,6 +63,18 @@ Jeu `tube` : 0 % rebondit et reste posée sur le tube ; 20 % entre à peine ; 50
   différents, jamais une combinaison récente), programmées à **12 h, 17 h, 20 h (Bruxelles)**, descriptions en
   **anglais**, journal dans `videos/softness/posted.json` (à committer). `--dry-run` pour voir le programme.
 
+## Ajouter un nouveau jeu (tâche créative hebdomadaire)
+
+L'utilisateur veut des jeux **variés et créatifs**. Pour en ajouter un :
+1. Idée originale et lisible en 1 seconde (obstacle + trou / passage), différente des jeux existants
+   (ex. : entonnoir, presse hydraulique, rouleaux, hachoir, tamis, emporte-pièce, escalier, pics, ventilateur…).
+2. Dans `softness.py` : géométrie dans `build_scene` (branche `if GAME == "<nom>"`), réglages dans `set_game`
+   (PLANE, GAP), comportement dans `state`/`deform` si besoin, et ajouter le nom aux `choices` de `--game`.
+3. `--test` sur plusieurs couleurs/objets, **regarder les images** (obstacle lisible, rien de cassé, la capsule
+   passe de plus en plus loin de 0 à 100 %), corriger jusqu'à ce que ce soit propre.
+4. Ajouter son nom anglais dans `scripts/game_names.json` (ex. `{"entonnoir": "the funnel"}`) et une ligne ici.
+   `daily.py` l'intègre automatiquement à la rotation.
+
 ## Publication manuelle
 
 Format vertical 9:16 compatible Reels Facebook / TikTok / Shorts. Description type :

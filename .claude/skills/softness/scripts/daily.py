@@ -13,12 +13,23 @@ from zoneinfo import ZoneInfo
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
 LOG = os.path.join(ROOT, "videos", "softness", "posted.json")
-GAMES = ["scies", "tube", "grille", "engrenages"]
+def _games():
+    """Tous les jeux déclarés dans softness.py (les nouveaux entrent automatiquement dans la rotation)."""
+    import re
+    src = open(os.path.join(HERE, "softness.py"), encoding="utf-8").read()
+    m = re.search(r'"--game".*?choices=\[([^\]]*)\]', src)
+    return re.findall(r'"([^"]+)"', m.group(1)) if m else ["scies", "tube", "grille", "engrenages"]
+
+
+GAMES = _games()
 COLORS = ["bleu", "rouge", "vert", "jaune", "rose", "violet", "orange", "chrome", "or"]
 OBJECTS = ["capsule", "bille"]
 SLOTS = [12, 17, 20]
 TZ = ZoneInfo("Europe/Brussels")
 NAMES = {"scies": "the saws", "tube": "the tube", "grille": "the grid", "engrenages": "the gears"}
+NAMES_FILE = os.path.join(HERE, "game_names.json")  # noms anglais des jeux ajoutés plus tard
+if os.path.exists(NAMES_FILE):
+    NAMES.update(json.load(open(NAMES_FILE, encoding="utf-8")))
 HOOKS = ["0% vs 100% soft 😳 How far can it squish through {g}? 👇",
          "Which softness made it through {g}? 0, 20, 50, 75 or 100%? 👇",
          "Soft objects vs {g} 😌 Wait for 100%…",
@@ -62,7 +73,7 @@ def main():
     sys.path.insert(0, HERE)
     for (game, color, objet), hour, hook in zip(chosen, SLOTS, hooks):
         at = datetime.datetime(day.year, day.month, day.day, hour, 0, tzinfo=TZ)
-        desc = hook.format(g=NAMES[game]) + "\n\n" + TAGS
+        desc = hook.format(g=NAMES.get(game, "the machine")) + "\n\n" + TAGS
         out = os.path.join(ROOT, "videos", "softness", f"{day.isoformat()}_{game}_{color}_{objet}.mp4")
         print(f"{at:%d/%m %H:%M} → {game} / {color} / {objet}\n   {desc.splitlines()[0]}", flush=True)
         if a.dry_run:
