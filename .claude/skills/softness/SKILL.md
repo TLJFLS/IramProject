@@ -53,7 +53,17 @@ Jeu `tube` : 0 % rebondit et reste posée sur le tube ; 20 % entre à peine ; 50
 - La déformation est calculée (pas de simulation physique) : résultat toujours identique et fiable.
   Réglages dans `state()` (temps, écrasement, vitesse de passage) et `deform()` (forme).
 
-## Publication
+## Publication automatique sur Facebook (page « Squish lab », id 1530591430128708)
+
+- `scripts/fbpost.py video.mp4 "description" [--at ISO]` : publie en **Reel** (ou programme). Gratuit (API Graph).
+  Le token est un secret réseau de l'environnement pour `graph.facebook.com` (jamais affiché) ; le token de la page
+  est déduit via `/me/accounts`. Hôte `rupload.facebook.com` autorisé pour l'envoi des fichiers.
+  L'accès aux données du token personnel expire le **17/02/2027** : prévenir l'utilisateur avant pour le renouveler.
+- `scripts/daily.py` : routine quotidienne (tâche programmée la nuit) → 3 vidéos variées (jeux et couleurs
+  différents, jamais une combinaison récente), programmées à **12 h, 17 h, 20 h (Bruxelles)**, descriptions en
+  **anglais**, journal dans `videos/softness/posted.json` (à committer). `--dry-run` pour voir le programme.
+
+## Publication manuelle
 
 Format vertical 9:16 compatible Reels Facebook / TikTok / Shorts. Description type :
 « 0 % à 100 % de softness 😳 Laquelle est la plus satisfaisante ? #satisfying #blender #3d #asmr #softness »
