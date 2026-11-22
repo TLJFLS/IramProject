@@ -75,6 +75,10 @@ L'utilisateur veut des jeux **variés et créatifs**. Pour en ajouter un :
 4. Ajouter son nom anglais dans `scripts/game_names.json` (ex. `{"entonnoir": "the funnel"}`) et une ligne ici.
    `daily.py` l'intègre automatiquement à la rotation.
 
+Jeux ajoutés :
+- `etoile` (22/11) : plaque dorée percée d'une étoile à 5 branches sur 4 colonnes ; molle, la pâte ressort
+  en boudin étoilé (façon pâte à modeler) et tombe dans le trou. Caméra plus haute pour voir l'étoile.
+
 ## Publication manuelle
 
 Format vertical 9:16 compatible Reels Facebook / TikTok / Shorts. Description type :

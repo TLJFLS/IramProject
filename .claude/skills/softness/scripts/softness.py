@@ -22,10 +22,22 @@ R0, HC = 0.45, 2.6          # rayon, hauteur
 PLANE = 1.26                # dessus des scies (ou haut du tube)
 GAP = 0.2                   # rayon du passage entre les 4 scies (ou rayon intérieur du tube)
 HOLE = 0.56                 # rayon du trou du socle
-GAME = "scies"              # "scies", "tube", "grille" ou "engrenages"
+GAME = "scies"              # "scies", "tube", "grille", "engrenages" ou "etoile"
 STYLE = "rose"              # "rose" (socle hexagonal) ou "marbre" (marbre gris, bagues dorées, rayons de lumière)
 TUBE_IN, TUBE_TOP = 0.3, 1.9
 GEAR_R, GEAR_X, GEAR_Z = 0.7, 0.75, 1.55   # rayon des engrenages, écart au centre, hauteur de l'axe
+STAR_RO, STAR_RI, STAR_TOP = 0.54, 0.22, 1.85  # filière étoile : rayons des pointes / des creux, dessus de la plaque
+
+
+def star_r(theta):
+    """Rayon de l'étoile à 5 branches (pointe vers +x) dans la direction theta."""
+    a = math.pi / 5
+    phi = np.mod(theta, 2 * a)
+    phi = np.where(phi > a, 2 * a - phi, phi)
+    p1 = np.array([STAR_RO, 0.0])
+    e = np.array([STAR_RI * math.cos(a), STAR_RI * math.sin(a)]) - p1
+    num = p1[0] * e[1] - p1[1] * e[0]
+    return num / (np.cos(phi) * e[1] - np.sin(phi) * e[0])
 
 
 def set_game(game):
@@ -36,6 +48,8 @@ def set_game(game):
     elif game == "engrenages":  # l'objet repose dans le creux entre les deux engrenages
         PLANE = GEAR_Z + math.sqrt((GEAR_R + R0) ** 2 - GEAR_X ** 2) - R0
         GAP = 0.09
+    elif game == "etoile":  # plaque percée d'une étoile : la pâte ressort en boudin étoilé
+        PLANE, GAP = STAR_TOP, STAR_RO
 NT, NC, NB = 48, 12, 26     # segments autour, anneaux par demi-sphère, anneaux du corps
 
 
@@ -87,6 +101,10 @@ def init_object(r0, hc):
     KC = VOL / (math.pi * R0 ** 2 * HC)
     VF = np.interp(VH, _hh, _F)            # fraction de volume de chaque sommet (du bas vers le haut)
     COS, SIN = np.cos(VT), np.sin(VT)
+    global SF, AF
+    SF = star_r(VT + math.pi / 2) / STAR_RO   # profil étoilé (1 aux pointes), une pointe vers la caméra (-y)
+    _t = np.linspace(0, 2 * math.pi, 2000, endpoint=False)
+    AF = float(np.mean((star_r(_t) / STAR_RO) ** 2))  # aire de l'étoile / aire du disque de rayon STAR_RO
 
 
 init_object(R0, HC)
@@ -198,24 +216,25 @@ def deform(st):
         if Vu > 1e-6:
             Ru = min(Ru, 1.25 * (3 * Vu / (4 * math.pi)) ** (1 / 3))
         Hu = Vu / (math.pi * Ru ** 2 * KC) if Vu > 1e-9 else 0.0
-        Rl = GAP if GAME == "tube" else min(R0 * st["bl"], HOLE * 0.9)
+        Rl = GAP if GAME in ("tube", "etoile") else min(R0 * st["bl"], HOLE * 0.9)
         if Vl > 1e-9:
             Rl = min(Rl, 1.1 * (3 * Vl / (4 * math.pi)) ** (1 / 3))
-        Hl = Vl / (math.pi * Rl ** 2 * KC) if Vl > 1e-9 else 0.0
+        af = AF if GAME == "etoile" else 1.0
+        Hl = Vl / (math.pi * Rl ** 2 * KC * af) if Vl > 1e-9 else 0.0
         z = np.empty_like(VH)
         rad = np.empty_like(VH)
         low = VF < f
         if low.any():
             q = q_of(VF[low] / max(f, 1e-9))
             z[low] = PLANE - Hl + q * Hl - st["drop"]
-            rad[low] = Rl * shape(q)
+            rad[low] = Rl * shape(q) * (SF[low] if GAME == "etoile" else 1.0)
         up = ~low
         if up.any():
             q = q_of((VF[up] - f) / max(1 - f, 1e-9))
             qc = st["flat"] if f < 0.02 else 0.0
             z[up] = PLANE + Hu * np.clip((q - qc) / (1 - qc), 0, None)
             rad[up] = Ru * shape(q)
-        if 0.0 < f < 1.0 and GAME != "tube":  # col de pâte entre les scies
+        if 0.0 < f < 1.0 and GAME not in ("tube", "etoile"):  # col de pâte entre les scies
             rad = np.maximum(rad, GAP * np.exp(-((z - PLANE) / 0.12) ** 2))
             rad = np.where(np.abs(z - PLANE) < 0.05, np.minimum(rad, GAP), rad)
         z = z if Vl > 0 else z
@@ -422,6 +441,37 @@ def build_scene(color, res, samples):
             bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.045, depth=GEAR_Z - GEAR_R * 0.6,
                                                 location=(side * GEAR_X, -0.5, (GEAR_Z - GEAR_R * 0.6) / 2))
             bpy.context.object.data.materials.append(chrome)
+    if GAME == "etoile":  # plaque dorée épaisse percée d'une étoile, posée sur 4 colonnes
+        plate_mat = mat("plaque", (0.95, 0.95, 0.97), 0.15, 1.0)
+        th = 0.22
+        bpy.ops.mesh.primitive_cylinder_add(vertices=96, radius=1.3, depth=th, location=(0, 0, STAR_TOP - th / 2))
+        plate = bpy.context.object
+        tt = np.linspace(0, 2 * math.pi, 200, endpoint=False)
+        rr = star_r(tt + math.pi / 2)
+        n = len(tt)
+        sv = [(rr[i] * math.cos(tt[i]), rr[i] * math.sin(tt[i]), z) for z in (STAR_TOP - 1, STAR_TOP + 1) for i in range(n)]
+        sf = [tuple(range(n))[::-1], tuple(range(n, 2 * n))] + [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
+        smesh = bpy.data.meshes.new("etoile")
+        smesh.from_pydata(sv, [], sf)
+        smesh.update()
+        scut = bpy.data.objects.new("etoile", smesh)
+        sc.collection.objects.link(scut)
+        mod = plate.modifiers.new("etoile", "BOOLEAN")
+        mod.operation, mod.object = "DIFFERENCE", scut
+        bpy.context.view_layer.objects.active = plate
+        bpy.ops.object.modifier_apply(modifier="etoile")
+        bpy.data.objects.remove(scut)
+        plate.data.materials.clear()
+        plate.data.materials.append(plate_mat)
+        bpy.ops.mesh.primitive_torus_add(major_radius=1.3, minor_radius=0.06, major_segments=128, location=(0, 0, STAR_TOP - th / 2))
+        bpy.context.object.data.materials.append(gold)
+        bpy.ops.object.shade_smooth()
+        for k in range(4):
+            ang = math.pi / 4 + k * math.pi / 2
+            bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.07, depth=STAR_TOP - th,
+                                                location=(1.12 * math.cos(ang), 1.12 * math.sin(ang), (STAR_TOP - th) / 2))
+            bpy.context.object.data.materials.append(gold)
+            bpy.ops.object.shade_smooth()
     if GAME == "grille":  # grille de barreaux, ouverture carrée au centre
         steel = mat("acier", (0.85, 0.85, 0.9), 0.18, 1.0)
         for i, c in enumerate([-1.0, -0.62, -GAP - 0.05, GAP + 0.05, 0.62, 1.0]):
@@ -444,7 +494,7 @@ def build_scene(color, res, samples):
     teeth = 12
     bm = bmesh.new()
     pts = []
-    if GAME in ("tube", "grille", "engrenages"):
+    if GAME in ("tube", "grille", "engrenages", "etoile"):
         teeth = 0
     step = 2 * math.pi / max(teeth, 1)
     for k in range(teeth):
@@ -461,7 +511,7 @@ def build_scene(color, res, samples):
     blade_mesh = bpy.data.meshes.new("scie")
     bm.to_mesh(blade_mesh)
     bm.free()
-    for k, (sx, sy) in enumerate([] if GAME in ("tube", "grille", "engrenages") else [(1, 1), (-1, 1), (-1, -1), (1, -1)]):
+    for k, (sx, sy) in enumerate([] if GAME in ("tube", "grille", "engrenages", "etoile") else [(1, 1), (-1, 1), (-1, -1), (1, -1)]):
         o = bpy.data.objects.new(f"scie{k}", blade_mesh)
         sc.collection.objects.link(o)
         o.location = (sx * dpos, sy * dpos, PLANE - 0.04 - (0.045 if k % 2 else 0.0))
@@ -498,11 +548,11 @@ def build_scene(color, res, samples):
                                ((0, 4, 6), 600, 4, (math.radians(-40), 0, 0))]:
         bpy.ops.object.light_add(type="AREA", location=loc, rotation=rot)
         bpy.context.object.data.energy, bpy.context.object.data.size = en, size
-    bpy.ops.object.camera_add(location=(0, -8.2, 3.1))
+    bpy.ops.object.camera_add(location=(0, -8.2, 4.6) if GAME == "etoile" else (0, -8.2, 3.1))
     camo = bpy.context.object
     sc.camera = camo
     camo.data.lens = 40
-    target = Vector((0, 0, 1.75 if GAME in ("tube", "engrenages") else 1.45))
+    target = Vector((0, 0, 1.75 if GAME in ("tube", "engrenages", "etoile") else 1.45))
     camo.rotation_euler = (target - camo.location).to_track_quat("-Z", "Y").to_euler()
     sc.render.engine = "CYCLES"
     sc.cycles.device = "CPU"
@@ -710,7 +760,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="videos/softness/softness.mp4")
     ap.add_argument("--steps", default="0,20,50,75,100")
-    ap.add_argument("--game", default="scies", choices=["scies", "tube", "grille", "engrenages"])
+    ap.add_argument("--game", default="scies", choices=["scies", "tube", "grille", "engrenages", "etoile"])
     ap.add_argument("--objet", default="capsule", choices=["capsule", "bille"])
     ap.add_argument("--style", default=None, choices=["rose", "marbre"], help="défaut : marbre pour engrenages, sinon rose")
     ap.add_argument("--color", default="bleu")
@@ -724,8 +774,13 @@ def main():
     res = tuple(int(v) for v in a.res.split("x"))
     global STYLE
     STYLE = a.style or ("marbre" if a.game == "engrenages" else "rose")
+    global NT
+    if a.game == "etoile":
+        NT = 60  # multiple de 10 : les 5 pointes de l'étoile tombent sur des sommets
     if a.objet == "bille":
         init_object(0.6, 1.2)
+    elif a.game == "etoile":
+        init_object(R0, HC)
     set_game(a.game)
     if a.remux:
         tmp = tempfile.mkdtemp()
